@@ -162,7 +162,7 @@ sub SiSi_Read($){
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Message:(.*?)$/){
+		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Message:(.*)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
@@ -187,7 +187,7 @@ sub SiSi_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logMessage' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupID' and attachment: '$attachment'");
 
-		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*?),Attachments:(\/.*+|NONE),Message:(.*?)$/){
+		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*?),Attachments:(\/.*+|NONE),Message:(.*)$/){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$3' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
 
@@ -195,7 +195,7 @@ sub SiSi_Read($){
 
 			$hash->{STATE} = "$1";
 
-		}elsif($curr_message =~ /^DBus.Error.(.*+)$/){
+		}elsif($curr_message =~ /^DBus.Error.(.+)$/){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - A DBus error occured: $1. Closing connection.");
 
@@ -203,7 +203,7 @@ sub SiSi_Read($){
 			#&SiSi_stopMessageDaemon($hash);
 			#InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
-		}elsif($curr_message =~ /^Log:([0-9]{1}),(.*+)$/){
+		}elsif($curr_message =~ /^Log:([0-9]{1}),(.+)$/){
 
 			Log3($hash->{NAME},$1,$2);
 
@@ -397,7 +397,7 @@ sub SiSi_startMessageDaemon($){
 					return;
 				}
 
-				if($buffer =~ /^Send:Recipients:(\+{1}[0-9]+.*?),Attachments:(\/.*+|NONE),Message:(.*?)$/){
+				if($buffer =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
 
 					my @attachment = ();
 					my @recipients = split(/,/,$1);
