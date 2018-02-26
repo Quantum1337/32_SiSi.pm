@@ -162,7 +162,7 @@ sub SiSi_Read($){
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]?|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Message:(.*?)$/){
+		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Message:(.*?)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
@@ -430,14 +430,14 @@ sub SiSi_startMessageDaemon($){
 
 		sub msg_timeout() {
 			my ($hash) = @_;
-			#my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
+			my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
 
-			if($processID =~ /^[0-9]+/){
+			#if($processID =~ /^[0-9]+/){
 				#syswrite($hash->{FH},"Log:3,ALIVE $processID\n");
 
-			}else{
+			#}else{
 				# syswrite($hash->{FH},"Log:3,DEAD $processID\n");
-			}
+			#}
 
 		}
 	}
