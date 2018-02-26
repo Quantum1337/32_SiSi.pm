@@ -8,7 +8,6 @@ use Net::DBus::Callback;
 use Socket;
 use POSIX ":sys_wait_h";
 
-
 my %SIGMSG_sets = (
 	"sendMessage"	=> "",
 	"reconnect:noArg"   => ""
