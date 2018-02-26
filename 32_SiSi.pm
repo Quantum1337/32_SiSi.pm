@@ -8,21 +8,22 @@ use Net::DBus::Callback;
 use Socket;
 use POSIX ":sys_wait_h";
 
-my %SIGMSG_sets = (
+my %SiSi_sets = (
 	"sendMessage"	=> "",
 	"reconnect:noArg"   => ""
 );
 
-sub SIGMSG_Initialize($) {
+
+sub SiSi_Initialize($) {
     my ($hash) = @_;
 
-    $hash->{DefFn}      = 'SIGMSG_Define';
-    $hash->{UndefFn}    = 'SIGMSG_Undef';
-    $hash->{SetFn}      = 'SIGMSG_Set';
-    $hash->{ShutdownFn} = 'SIGMSG_Shutdown';
-    $hash->{ReadFn}     = 'SIGMSG_Read';
-    $hash->{AttrFn}     = 'SIGMSG_Attr';
-    $hash->{NotifyFn}   = 'SIGMSG_Notify';
+    $hash->{DefFn}      = 'SiSi_Define';
+    $hash->{UndefFn}    = 'SiSi_Undef';
+    $hash->{SetFn}      = 'SiSi_Set';
+    $hash->{ShutdownFn} = 'SiSi_Shutdown';
+    $hash->{ReadFn}     = 'SiSi_Read';
+    $hash->{AttrFn}     = 'SiSi_Attr';
+    $hash->{NotifyFn}   = 'SiSi_Notify';
 
 
     $hash->{AttrList} =
@@ -34,7 +35,7 @@ sub SIGMSG_Initialize($) {
     $hash->{parseParams} = 1;
 }
 
-sub SIGMSG_Define($$$) {
+sub SiSi_Define($$$) {
 	my ($hash, $a, $h) = @_;
 
 	if($init_done){
@@ -48,13 +49,13 @@ sub SIGMSG_Define($$$) {
 
 		if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
-			RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
+			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 
-			if(!&SIGMSG_MessageDaemonRunning($hash)){
-				&SIGMSG_startMessageDaemon($hash)
+			if(!&SiSi_MessageDaemonRunning($hash)){
+				&SiSi_startMessageDaemon($hash)
 			}
 
-			InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 		}else{
 			$hash->{STATE} = "Disconnected";
@@ -66,40 +67,40 @@ sub SIGMSG_Define($$$) {
 	return
 }
 
-sub SIGMSG_Undef($$) {
+sub SiSi_Undef($$) {
 	my ($hash, $arg) = @_;
 
-	if(&SIGMSG_MessageDaemonRunning($hash)){
-		&SIGMSG_stopMessageDaemon($hash);
+	if(&SiSi_MessageDaemonRunning($hash)){
+		&SiSi_stopMessageDaemon($hash);
 	}
 
-	RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
+	RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 
 	return undef;
 }
 
-sub SIGMSG_Shutdown($){
+sub SiSi_Shutdown($){
 	my($hash) = @_;
 
-	if(&SIGMSG_MessageDaemonRunning($hash)){
-		&SIGMSG_stopMessageDaemon($hash);
+	if(&SiSi_MessageDaemonRunning($hash)){
+		&SiSi_stopMessageDaemon($hash);
 	}
 
-	RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
+	RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 
 	return;
 
 }
 
-sub SIGMSG_Set($$$) {
+sub SiSi_Set($$$) {
 	my ($hash, $a, $h) = @_;
 
 	if($a->[1] eq "reconnect"){
 
 				if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
-					RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-					&SIGMSG_restartMessageDaemon($hash);
-					InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+					RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+					&SiSi_restartMessageDaemon($hash);
+					InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 				}else{
 					return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
 				}
@@ -131,13 +132,13 @@ sub SIGMSG_Set($$$) {
 		 }
 
 	}else{
-		my @cList = keys %SIGMSG_sets;
+		my @cList = keys %SiSi_sets;
 		return "Unknown command $a->[1], choose one of " . join(" ", @cList);
 	}
 
 }
 
-sub SIGMSG_Read($){
+sub SiSi_Read($){
 	my ( $hash ) = @_;
 
 	my $buffer;
@@ -150,9 +151,9 @@ sub SIGMSG_Read($){
 	if($sysreadReturn < 0 || !defined $sysreadReturn){
 		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Error while reading received data!");
 
-		RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-		&SIGMSG_stopMessageDaemon($hash);
-		InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+		RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+		&SiSi_stopMessageDaemon($hash);
+		InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 		return;
 	}
@@ -199,9 +200,9 @@ sub SIGMSG_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - A DBus error occured: $1. Closing connection.");
 
-			#RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-			#&SIGMSG_stopMessageDaemon($hash);
-			#InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+			#RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+			#&SiSi_stopMessageDaemon($hash);
+			#InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 		}elsif($curr_message =~ /^Log:([0-9]{1}),(.*+)$/){
 
@@ -213,9 +214,9 @@ sub SIGMSG_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured. Closing connection to DBus service $hash->{DBUS_SERVICE} $curr_message");
 
-			RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-			&SIGMSG_restartMessageDaemon($hash);
-			InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+			&SiSi_restartMessageDaemon($hash);
+			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 	}
 
@@ -223,7 +224,7 @@ sub SIGMSG_Read($){
 
 }
 
-sub SIGMSG_Attr(@) {
+sub SiSi_Attr(@) {
 	my ($cmd,$name,$attr_name,$attr_value) = @_;
 	if($cmd eq "set") {
 
@@ -233,11 +234,11 @@ sub SIGMSG_Attr(@) {
 					my $hash = $defs{$name};
 
 					if($init_done){
-						if(!&SIGMSG_MessageDaemonRunning($hash)){
+						if(!&SiSi_MessageDaemonRunning($hash)){
 
-							RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-							&SIGMSG_startMessageDaemon($hash);
-							InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$hash);
+							RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+							&SiSi_startMessageDaemon($hash);
+							InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 						}
 					}
@@ -245,8 +246,8 @@ sub SIGMSG_Attr(@) {
 
 					my $hash = $defs{$name};
 
-					&SIGMSG_stopMessageDaemon($hash);
-					RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
+					&SiSi_stopMessageDaemon($hash);
+					RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 
 				}else{
 					return "Invalid argument $attr_value to $attr_name. Must be yes or no.";
@@ -258,15 +259,15 @@ sub SIGMSG_Attr(@) {
 
 			my $hash = $defs{$name};
 
-			RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-			&SIGMSG_stopMessageDaemon($hash);
+			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+			&SiSi_stopMessageDaemon($hash);
 
 		}
 	}
 return undef
 }
 
-sub SIGMSG_Notify($$){
+sub SiSi_Notify($$){
 	my ($own_hash, $dev_hash) = @_;
 
 	if(IsDisabled($own_hash->{NAME})){
@@ -285,13 +286,13 @@ sub SIGMSG_Notify($$){
 
 		if(AttrVal($own_hash->{NAME},"enable","no") eq "yes"){
 
-			RemoveInternalTimer($own_hash,"SIGMSG_MessageDaemonWatchdog");
+			RemoveInternalTimer($own_hash,"SiSi_MessageDaemonWatchdog");
 
-			if(!&SIGMSG_MessageDaemonRunning($own_hash)){
-				&SIGMSG_startMessageDaemon($own_hash);
+			if(!&SiSi_MessageDaemonRunning($own_hash)){
+				&SiSi_startMessageDaemon($own_hash);
 			}
 
-			InternalTimer(gettimeofday() + 5,"SIGMSG_MessageDaemonWatchdog",$own_hash);
+			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$own_hash);
 
 		}else{
 			$own_hash->{STATE} = "Disconnected";
@@ -302,7 +303,7 @@ sub SIGMSG_Notify($$){
 
 }
 
-sub SIGMSG_startMessageDaemon($){
+sub SiSi_startMessageDaemon($){
 	my ($hash) = @_;
 
 	my $child_pid;
@@ -453,19 +454,19 @@ sub SIGMSG_startMessageDaemon($){
 	return 1;
 }
 
-sub SIGMSG_restartMessageDaemon($){
+sub SiSi_restartMessageDaemon($){
 	my ($hash) = @_;
 
 	Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnect to DBus service $hash->{DBUS_SERVICE}.");
 
-	&SIGMSG_stopMessageDaemon($hash);
-	if(&SIGMSG_startMessageDaemon($hash)){
+	&SiSi_stopMessageDaemon($hash);
+	if(&SiSi_startMessageDaemon($hash)){
 	}else{
 		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnection to DBus service $hash->{DBUS_SERVICE} failed.");
 	}
 }
 
-sub SIGMSG_stopMessageDaemon($){
+sub SiSi_stopMessageDaemon($){
 	my ($hash) = @_;
 	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{DBUS_SERVICE}.");
 	if(defined $hash->{FH} || defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{CHILD_PID}){
@@ -504,7 +505,7 @@ sub SIGMSG_stopMessageDaemon($){
 	return;
 }
 
-sub SIGMSG_MessageDaemonRunning($){
+sub SiSi_MessageDaemonRunning($){
 	my ($hash) = @_;
 
 	if(!defined $hash->{CHILD_PID}){
@@ -520,16 +521,16 @@ sub SIGMSG_MessageDaemonRunning($){
 	}
 }
 
-sub SIGMSG_MessageDaemonWatchdog($){
+sub SiSi_MessageDaemonWatchdog($){
 	my ($hash) = @_;
 
-	if(&SIGMSG_MessageDaemonRunning($hash)){
-		InternalTimer(gettimeofday() + 30,"SIGMSG_MessageDaemonWatchdog",$hash);
+	if(&SiSi_MessageDaemonRunning($hash)){
+		InternalTimer(gettimeofday() + 30,"SiSi_MessageDaemonWatchdog",$hash);
 	}else{
 
-		RemoveInternalTimer($hash,"SIGMSG_MessageDaemonWatchdog");
-		&SIGMSG_restartMessageDaemon($hash);
-		InternalTimer(gettimeofday() + 30,"SIGMSG_MessageDaemonWatchdog",$hash);
+		RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+		&SiSi_restartMessageDaemon($hash);
+		InternalTimer(gettimeofday() + 30,"SiSi_MessageDaemonWatchdog",$hash);
 
 	}
 
