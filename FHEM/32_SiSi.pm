@@ -27,6 +27,7 @@ sub SiSi_Initialize($) {
 
     $hash->{AttrList} =
           "enable:no,yes " .
+					"DBusTimeout " .
 					"DBusService " .
 					"DBusObject " .
           $readingFnAttributes;
@@ -253,6 +254,17 @@ sub SiSi_Attr(@) {
 				}
 			}
 
+			if($attr_name eq "DBusTimeout") {
+				if($attr_value =~ /^[0-9]+$/ && ($attr_value >= 60 && $attr_value <= 500)) {
+
+					#ToDo
+
+				}else{
+
+					return "Invalid argument $attr_value to $attr_name. Must be nummeric and between 60 and 500"
+
+				}
+			}
 	}elsif($cmd eq "del"){
 		if($attr_name eq "enable"){
 
@@ -260,6 +272,12 @@ sub SiSi_Attr(@) {
 
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			&SiSi_stopMessageDaemon($hash);
+
+		}
+
+		if($attr_name eq "DBusTimeout"){
+
+			#ToDo
 
 		}
 	}
@@ -346,9 +364,17 @@ sub SiSi_startMessageDaemon($){
 
 		#Connect to the DBUS Instance
 		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
-		my $signal_cli = Net::DBus->system
-			->get_service($child_hash->{DBUS_SERVICE})
-			->get_object($child_hash->{DBUS_OBJECT});
+  	my $DBus = Net::DBus->system;
+
+		#Set DBus Timeout
+		if(defined AttrVal($child_hash->{NAME},"DBusTimeout",undef)){
+			$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
+		}else{
+			$DBus->timeout(60 * 1000);
+		}
+
+		my $signal_cli_service = $DBus->get_service($child_hash->{DBUS_SERVICE});
+		my $signal_cli = $signal_cli_service->get_object($child_hash->{DBUS_OBJECT});
 		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
 
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to listen to DBus-signal 'MessageReceived'.\n");
