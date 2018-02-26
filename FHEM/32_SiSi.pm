@@ -187,7 +187,7 @@ sub SiSi_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logMessage' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupID' and attachment: '$attachment'");
 
-		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*?),Attachments:(\/.*+|NONE),Message:(.*)$/){
+		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$3' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
 
@@ -362,6 +362,7 @@ sub SiSi_startMessageDaemon($){
 		my $event_loop = Net::DBus::Reactor->main();
 		$event_loop->add_read($child_hash->{FD},Net::DBus::Callback->new(method => \&msg_send, args => [$child_hash,$signal_cli]));
 		#$event_loop->add_timeout(20000, Net::DBus::Callback->new(method => \&msg_timeout, args => [$child_hash]));
+
 		#Let the parent know that the child is connected
 		print("State:Connected\n");
 
