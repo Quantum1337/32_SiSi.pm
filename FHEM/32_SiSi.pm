@@ -361,7 +361,7 @@ sub SiSi_startMessageDaemon($){
 		#Setting up an event Loop
 		my $event_loop = Net::DBus::Reactor->main();
 		$event_loop->add_read($child_hash->{FD},Net::DBus::Callback->new(method => \&msg_send, args => [$child_hash,$signal_cli]));
-		$event_loop->add_timeout(20000, Net::DBus::Callback->new(method => \&msg_timeout, args => [$child_hash]));
+		#$event_loop->add_timeout(20000, Net::DBus::Callback->new(method => \&msg_timeout, args => [$child_hash]));
 		#Let the parent know that the child is connected
 		print("State:Connected\n");
 
@@ -430,7 +430,7 @@ sub SiSi_startMessageDaemon($){
 
 		sub msg_timeout() {
 			my ($hash) = @_;
-			my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
+			#my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
 
 			if($processID =~ /^[0-9]+/){
 				#syswrite($hash->{FH},"Log:3,ALIVE $processID\n");
