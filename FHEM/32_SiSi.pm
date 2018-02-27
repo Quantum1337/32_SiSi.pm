@@ -108,7 +108,12 @@ sub SiSi_Set($$$) {
 		 my $attachment = "NONE";
 		 my $message = "";
 
-		 if(!defined $h->{r} && (!defined $h->{m})){
+		 if(!&SiSi_MessageDaemonRunning($hash)){
+
+			 return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
+
+		 }elsif(!defined $h->{r} && (!defined $h->{m})){
+
 			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a=\"PATH1,PATH2,PATHN\"]"
 
 		 }elsif($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
