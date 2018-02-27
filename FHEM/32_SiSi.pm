@@ -111,6 +111,10 @@ sub SiSi_Set($$$) {
 		 if(!defined $h->{r} && (!defined $h->{m})){
 			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a=\"PATH1,PATH2,PATHN\"]"
 
+		 }elsif($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
+
+			 return "RECIPIENT must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
+
 		 }else{
 
 			 if(defined $h->{m}){
@@ -127,6 +131,7 @@ sub SiSi_Set($$$) {
 			 syswrite($hash->{FH},"Send:Recipients:$h->{r},Attachments:$attachment,Message:$message\n");
 
 			 return;
+
 		 }
 
 	}else{
