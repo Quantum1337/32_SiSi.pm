@@ -42,12 +42,8 @@ sub SiSi_Define($$$) {
 
 	if($init_done){
 
-		if(!defined AttrVal($hash->{NAME},"DBusObject",undef)){
-			$hash->{DBUS_OBJECT} = "/org/asamk/Signal";
-		}
-		if(!defined AttrVal($hash->{NAME},"DBusService",undef)){
-			$hash->{DBUS_SERVICE} = "org.asamk.Signal";
-		}
+		$hash->{DBUS_OBJECT} = AttrVal($hash->{NAME},"DBusObject","/org/asamk/Signal");
+		$hash->{DBUS_SERVICE} = AttrVal($hash->{NAME},"DBusService","org.asamk.Signal");
 
 		if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
@@ -305,12 +301,9 @@ sub SiSi_Notify($$){
 	my $events = deviceEvents($dev_hash, 1);
 
 	if($dev_hash->{NAME} eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events})){
-		if(!defined AttrVal($own_hash->{NAME},"DBusObject",undef)){
-			$own_hash->{DBUS_OBJECT} = "/org/asamk/Signal";
-		}
-		if(!defined AttrVal($own_hash->{NAME},"DBusService",undef)){
-			$own_hash->{DBUS_SERVICE} = "org.asamk.Signal";
-		}
+
+		$own_hash->{DBUS_OBJECT} = AttrVal($own_hash->{NAME},"DBusObject","/org/asamk/Signal");
+		$own_hash->{DBUS_SERVICE} = AttrVal($own_hash->{NAME},"DBusService","org.asamk.Signal");
 
 		if(AttrVal($own_hash->{NAME},"enable","no") eq "yes"){
 
