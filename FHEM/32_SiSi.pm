@@ -474,7 +474,7 @@ sub SiSi_startMessageDaemon($){
 
 	close $childsEnd;
 
-	$hash->{CHILD_PID} = $child_pid;
+	$hash->{PID} = $child_pid;
 	$hash->{FD} = $parentsEnd->fileno();
 	$hash->{FH} = $parentsEnd;
 
@@ -498,7 +498,7 @@ sub SiSi_restartMessageDaemon($){
 sub SiSi_stopMessageDaemon($){
 	my ($hash) = @_;
 	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{DBUS_SERVICE}.");
-	if(defined $hash->{FH} || defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{CHILD_PID}){
+	if(defined $hash->{FH} || defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
 
 		if(defined $hash->{FH}){
 			close($hash->{FH});
@@ -509,19 +509,19 @@ sub SiSi_stopMessageDaemon($){
 		delete($hash->{FD});
 		delete($hash->{FH});
 
-		if(defined $hash->{CHILD_PID}){
+		if(defined $hash->{PID}){
 
-			Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Trying to kill PID '$hash->{CHILD_PID}'.");
+			Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Trying to kill PID '$hash->{PID}'.");
 
-			if(kill(9,$hash->{CHILD_PID})){
+			if(kill(9,$hash->{PID})){
 
-				Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - PID '$hash->{CHILD_PID}' killed.");
+				Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - PID '$hash->{PID}' killed.");
 
 			}else{
-				Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Killing PID '$hash->{CHILD_PID}' failed. Maybe the process crashed due to an error?.");
+				Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Killing PID '$hash->{PID}' failed. Maybe the process crashed due to an error?.");
 			}
 
-			delete($hash->{CHILD_PID});
+			delete($hash->{PID});
 		}
 
 		$hash->{STATE} = "Disconnected";
@@ -537,12 +537,12 @@ sub SiSi_stopMessageDaemon($){
 sub SiSi_MessageDaemonRunning($){
 	my ($hash) = @_;
 
-	if(!defined $hash->{CHILD_PID}){
+	if(!defined $hash->{PID}){
 		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} not established.");
 		return 0;
 	}
 
-	if(!waitpid($hash->{CHILD_PID},WNOHANG)){
+	if(!waitpid($hash->{PID},WNOHANG)){
 		return 1;
 	}else{
 		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} lost.");
