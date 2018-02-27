@@ -35,6 +35,8 @@ sub SiSi_Initialize($) {
     $hash->{parseParams} = 1;
 }
 
+my $attrChanged = 0;
+
 sub SiSi_Define($$$) {
 	my ($hash, $a, $h) = @_;
 
@@ -257,7 +259,12 @@ sub SiSi_Attr(@) {
 			if($attr_name eq "DBusTimeout") {
 				if($attr_value =~ /^[0-9]+$/ && ($attr_value >= 60 && $attr_value <= 500)) {
 
-					#ToDo
+					my $hash = $defs{$name};
+
+					RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+					$attrChanged = 1;
+					InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+
 
 				}else{
 
@@ -277,7 +284,11 @@ sub SiSi_Attr(@) {
 
 		if($attr_name eq "DBusTimeout"){
 
-			#ToDo
+			my $hash = $defs{$name};
+
+			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+			$attrChanged = 1;
+			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
 		}
 	}
@@ -550,9 +561,13 @@ sub SiSi_MessageDaemonRunning($){
 sub SiSi_MessageDaemonWatchdog($){
 	my ($hash) = @_;
 
-	if(&SiSi_MessageDaemonRunning($hash)){
+	if(&SiSi_MessageDaemonRunning($hash) && !$attrChanged){
 		InternalTimer(gettimeofday() + 30,"SiSi_MessageDaemonWatchdog",$hash);
 	}else{
+
+		if($attrChanged){
+			$attrChanged = 0;
+		}
 
 		RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 		&SiSi_restartMessageDaemon($hash);
