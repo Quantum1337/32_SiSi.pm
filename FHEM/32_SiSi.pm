@@ -250,17 +250,18 @@ sub SiSi_Attr(@) {
 				}else{
 					return "Invalid argument $attr_value to $attr_name. Must be yes or no.";
 				}
-			}
-
-			if($attr_name eq "DBusTimeout") {
+			}elsif($attr_name eq "DBusTimeout") {
 				if($attr_value =~ /^[0-9]+$/ && ($attr_value >= 60 && $attr_value <= 500)) {
 
 					my $hash = $defs{$name};
+					if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
-					RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
-					$attrChanged = 1;
-					InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
+						RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+						$attrChanged = 1;
+						InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+
+					}
 
 				}else{
 
@@ -268,6 +269,7 @@ sub SiSi_Attr(@) {
 
 				}
 			}
+
 	}elsif($cmd eq "del"){
 		if($attr_name eq "enable"){
 
@@ -276,15 +278,14 @@ sub SiSi_Attr(@) {
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			&SiSi_stopMessageDaemon($hash);
 
-		}
-
-		if($attr_name eq "DBusTimeout"){
-
+		}elsif($attr_name eq "DBusTimeout"){
 			my $hash = $defs{$name};
+			if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
-			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
-			$attrChanged = 1;
-			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+				RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
+				$attrChanged = 1;
+				InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+			}
 
 		}
 	}
