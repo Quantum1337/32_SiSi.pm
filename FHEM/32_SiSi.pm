@@ -152,7 +152,7 @@ sub SiSi_Read($){
   $sysreadReturn = sysread($hash->{FH},$buffer,65536);
 
 	if($sysreadReturn < 0 || !defined $sysreadReturn){
-		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Error while reading received data!");
+		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Error while reading data from child.");
 
 		RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 		&SiSi_stopMessageDaemon($hash);
@@ -429,6 +429,7 @@ sub SiSi_startMessageDaemon($){
 			  $sysreadReturn = sysread($hash->{FH}, $buffer, 65536 );
 
 				if($sysreadReturn < 0 || !defined $sysreadReturn){
+					syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Error while reading data from parent.\n");
 					return;
 				}
 
