@@ -11,7 +11,7 @@ Bisher nur Unterstützung für Linux!
 
 [signal-cli](https://github.com/AsamK/signal-cli) muss im [daemon modus](https://github.com/AsamK/signal-cli/wiki/DBus-service) eingerichtet werden. Es müssen die DBus Konfiguration/Services und die systemd-Services wie unter **"System Bus"** beschrieben angelegt werden.
 
-## Hervorhebungen
+### Hervorhebungen
 
 * Die Bibliothek jni/unix-java.so muss auf dem System installiert sein (Debian: libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
 * Der Nutzer "signal-cli" muss angelegt ist.
@@ -37,32 +37,32 @@ Danach in FHEM mittels  `reload 32_SiSi.pm` das Modul einbinden.
 
 # Funktionen
 
-## Empfangen einer Nachrichten
+### Empfangen einer Nachrichten
 
 Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei werden folgende Modul readings gesetzt.
 
 * recvMessage: Für die empfangene Nachricht.
-* recvSender: Für den Sender der Nachrichte.
+* recvSender: Für den Sender der Nachricht.
 * recvGroupID: Für die GruppenID in der die Nachricht verfasst wurde.
 * recvTimestamp: Für den Zeitstempel, bei der die Nachricht abgesendet wurde.
 
-Gesendet werden können Nachrichten an Empfänger wahlweise mit Anhang. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
+### Senden einer Nachricht
 
-## Senden einer Nachricht
+Gesendet werden können Nachrichten an Empfänger wahlweise mit Anhang. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
 
 Eine Nachricht kann mittels des Set-Kommandos sendMessage gesendet werden. Dieses wird wie folgt angesprochen:
 
 `Usage: set <NAME> sendMessage m="MESSAGE" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a="PATH1,PATH2,PATHN"]`
 
-Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX.
+Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für einen deutschen Empfänger.
 
-## Reconnect
+### Reconnect
 
 Mittels
 `set <NAME> reconnect`
 wird die Verbindung zum DBus-Service neu aufgebaut.
 
-## Attribute
+### Attribute
 
 * enable: [yes|no] Das Modul versucht eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. Wenn Verbunden wechselt STATE auf *Connect*.
 * DBusTimout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
