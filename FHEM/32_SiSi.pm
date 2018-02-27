@@ -374,23 +374,21 @@ sub SiSi_startMessageDaemon($){
 		STDERR->autoflush(1);
 
 		#Connect to the DBUS Instance
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
+		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus\' System Bus.\n");
   	my $DBus = Net::DBus->system;
+		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus\' System Bus.\n");
 
-		#Set DBus Timeout
-		if(defined AttrVal($child_hash->{NAME},"DBusTimeout",undef)){
-			$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
-		}else{
-			$DBus->timeout(60 * 1000);
-		}
+		print("Log:5,$child_hash->{TYPE} $child_hash->{NAME} - Setting DBus Timeout to " . AttrVal($child_hash->{NAME},"DBusTimeout",60) . "s.\n");
+		$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
 
+		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
 		my $signal_cli_service = $DBus->get_service($child_hash->{DBUS_SERVICE});
 		my $signal_cli = $signal_cli_service->get_object($child_hash->{DBUS_OBJECT});
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
+		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
 
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to listen to DBus-signal 'MessageReceived'.\n");
 		$signal_cli->connect_to_signal('MessageReceived', \&msg_received);
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{DBUS_SERVICE}.\n");
+		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{DBUS_SERVICE}.\n");
 
 		#Not implemented in v0.5.6. But the functionality is in the master branch :)
 		#$signal_cli->connect_to_signal('ReceiptReceived', \&recp_received);
