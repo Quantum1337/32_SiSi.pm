@@ -425,7 +425,10 @@ sub SiSi_startMessageDaemon($){
 				my ($hash, $signal_cli) = @_;
 
 				my $buffer;
+				my @messages;
+				my $curr_message;
 				my $sysreadReturn;
+
 			  $sysreadReturn = sysread($hash->{FH}, $buffer, 65536 );
 
 				if($sysreadReturn < 0 || !defined $sysreadReturn){
@@ -433,35 +436,40 @@ sub SiSi_startMessageDaemon($){
 					return;
 				}
 
-				if($buffer =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
+				@messages = split(/\n/,$buffer);
 
-					my @attachment = ();
-					my @recipients = split(/,/,$1);
-					my $message = "";
-					my $logMessage = "";
+				while(@messages){
+					$curr_message = shift(@messages);
 
-					if($2 ne "NONE"){
-						@attachment = split(/,/,$2);;
+					if($curr_message =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
+
+						my @attachment = ();
+						my @recipients = split(/,/,$1);
+						my $message = "";
+						my $logMessage = "";
+
+						if($2 ne "NONE"){
+							@attachment = split(/,/,$2);;
+						}
+
+						if(defined $3){
+							$message = $3;
+							$logMessage = $3;
+
+							$message =~ s/\x1A/\n/g;
+							$logMessage =~ s/\x1A/\x20/g;
+						}
+
+						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{DBUS_SERVICE}\n");
+
+						$signal_cli->sendMessage($message,\@attachment,\@recipients);
+
+						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Message:$logMessage\n");
+
+					}else{
+						next;
 					}
-
-					if(defined $3){
-						$message = $3;
-						$logMessage = $3;
-
-						$message =~ s/\x1A/\n/g;
-						$logMessage =~ s/\x1A/\x20/g;
-
-					}
-
-					syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{DBUS_SERVICE}\n");
-
-					$signal_cli->sendMessage($message,\@attachment,\@recipients);
-
-					syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Message:$logMessage\n");
-
-				}else{
-					return;
-				}
+			}
 		}
 
 		sub msg_timeout() {
