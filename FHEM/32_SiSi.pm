@@ -166,7 +166,7 @@ sub SiSi_Read($){
 		return;
 	}
 
-	@messages = split(/\x0|\n|org.freedesktop./,$buffer);
+	@messages = split(/\x00|\n/,$buffer);
 
 	while(@messages){
 		$curr_message = shift(@messages);
@@ -204,13 +204,17 @@ sub SiSi_Read($){
 
 			$hash->{STATE} = "$1";
 
-		}elsif($curr_message =~ /^DBus.Error.(.+)$/){
+		}elsif($curr_message =~ /^org\.freedesktop\.DBus\.Error\.(.+)$/){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - A DBus error occured: $1. Closing connection.");
 
 			#RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			#&SiSi_stopMessageDaemon($hash);
 			#InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+
+		}elsif($curr_message =~ /^org\.asamk\.signal\.(.+)$/){
+
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An error occured on org.asamk.signal: $1.");
 
 		}elsif($curr_message =~ /^Log:([0-9]{1}),(.+)$/){
 
@@ -220,7 +224,7 @@ sub SiSi_Read($){
 			next;
 		}else{
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured. Closing connection to DBus service $hash->{DBUS_SERVICE} $curr_message");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured. Closing connection to DBus service $hash->{DBUS_SERVICE}. $curr_message");
 
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			&SiSi_restartMessageDaemon($hash);
@@ -386,7 +390,14 @@ sub SiSi_startMessageDaemon($){
 		$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
 
 		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
-		my $signal_cli_service = $DBus->get_service($child_hash->{DBUS_SERVICE});
+		my $signal_cli_service = do {
+    	local $@;
+    	my $ret;
+    	eval{
+						$ret = $DBus->get_service($child_hash->{DBUS_SERVICE}); 1
+					} or die "$@\n";
+    	$ret
+		};
 		my $signal_cli = $signal_cli_service->get_object($child_hash->{DBUS_OBJECT});
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
 
@@ -467,7 +478,13 @@ sub SiSi_startMessageDaemon($){
 
 						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{DBUS_SERVICE}\n");
 
-						$signal_cli->sendMessage($message,\@attachment,\@recipients);
+						eval{
+							$signal_cli->sendMessage($message,\@attachment,\@recipients);
+						};
+						if($@){
+							syswrite($hash->{FH},"$@\n");
+							next;
+						}
 
 						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Message:$logMessage\n");
 
