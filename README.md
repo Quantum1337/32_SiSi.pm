@@ -9,12 +9,12 @@ Bisher nur Unterstützung für Linux!
 
 # Vorbereitungen
 
-[signal-cli](https://github.com/AsamK/signal-cli) muss im [daemon modus](https://github.com/AsamK/signal-cli/wiki/DBus-service) eingerichtet werden. Es müssen die DBus Konfiguration/Services und die systemd-Services wie unter **"System Bus"** beschrieben angelegt werden.
+[signal-cli](https://github.com/AsamK/signal-cli) muss im [Daemon-Modus](https://github.com/AsamK/signal-cli/wiki/DBus-service) eingerichtet werden. Es müssen die DBus Konfiguration/Services und die systemd-Services wie unter **"System Bus"** beschrieben angelegt werden.
 
 ### Hervorhebungen
 
 * Die Bibliothek jni/unix-java.so muss auf dem System installiert sein (Debian: libunixsocket-java ArchLinux: libmatthew-unix-java (AUR)).
-* Der Nutzer "signal-cli" muss angelegt ist.
+* Der Nutzer "signal-cli" muss angelegt sein.
 * Wenn schon eine Nummer registriert ist, liegt im Verzeichnis `~/.config/signal` ein Ordner "data", der den privaten Schlüssel der registrierten Nummer enthält. Diese muss rekursiv nach  `/var/lib/signal-cli/` kopiert werden. Danach müssen die Rechte auf den Nutzer signal-cli übertragen werden: `sudo chown -R signal-cli:signal-cli /var/lib/signal-cli/data`
 * Das Modul unterstützt momentan noch **nicht** den DBus "Session Bus", deshalb ist die Einrichtung des **"System Bus"** zwingend erforderlich.
 * Die Dateien, die im oben verlinkten Wiki benötigt werden, finden sich hier [hier](https://github.com/AsamK/signal-cli/tree/master/data)
@@ -49,13 +49,13 @@ Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei we
 
 ### Senden einer Nachricht
 
-Gesendet werden können Nachrichten an Empfänger wahlweise mit Anhang. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
+Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anhängen gesendet werden. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
 
 Eine Nachricht kann mittels des Set-Kommandos sendMessage gesendet werden. Dieses wird wie folgt angesprochen:
 
 `Usage: set <NAME> sendMessage m="MESSAGE" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a="PATH1,PATH2,PATHN"]`
 
-Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für einen deutsche Nummer.
+Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer.
 
 ### Reconnect
 
@@ -68,13 +68,13 @@ wird die Verbindung zum DBus-Service neu aufgebaut.
 * enable: [yes|no] Wenn *enable* = yes, dann versucht das Modul eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. ist die Verbindung erfolgreich wechselt STATE auf *Connected*. Ansonsten in den FileLog schauen!
 * DBusTimout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
 
-# DBus und Systemd Timeouts
+# DBus und systemd Timeouts
 
-Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Starts des Daemons bzw. wärend dem versenden von Nachrichten mit großen Anhängen kommen. Auf einem RPI1 dauert der start mitunter 5-Minuten
+Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Starts des Daemons bzw. wärend dem Versenden von Nachrichten mit großen Anhängen kommen. Auf einem RPI1 dauert der Start mitunter 5 Minuten.
 
-* Sollte systemd eine Zeitüberschreitung während des Starts melden, muss folgende Zeile in der `signal.service` unter `/etc/systemd/system` bei `[Service]` eingetragen werden: `TimeoutStartSec = VALUE`. Danach `sudo systemctl daemon-reload` ausführen um die Änderung wirksam zu machen.
+* Sollte systemd eine Zeitüberschreitung während des Starts melden, muss folgende Zeile in der `signal.service` unter `/etc/systemd/system` bei `[Service]` eingetragen werden: `TimeoutStartSec = VALUE_IN_SEC`. Danach `sudo systemctl daemon-reload` ausführen um die Änderung wirksam zu machen.
 * Sollte das Modul den Fehler: `A DBus error occured: TimedOut: Failed to activate service 'org.asamk.Signal': timed out (service_start_timeout=25000ms). Closing connection.` bringen und sich dadurch öfter neu verbinden, kann die Zeile `<limit name="service_start_timeout">VaLUE_IN_MS</limit>` in der Datei `/etc/dbus-1/system.d/org.asamk.Signal.conf` vor `</busconfig>` eingetragen werden. Danach `sudo systemctl reload dbus.service` ausführen um die Änderung wirksam zu machen.
-* Sollte während dem Versenden einer Nachricht DBus ein reply-Fehler bringen. Das Attribut DBusTimeout entsprechend setzen.
+* Sollte das Modul den Fehler: `A DBus error occured: NoReply: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.. Closing connection.` bringen, sollte das Attribut DBusTimeout entsprechend gesetzt werden.
 
 # !!Wichtig!!
 
