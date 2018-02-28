@@ -75,8 +75,7 @@ Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Star
 * Sollte systemd eine Zeitüberschreitung während des Starts melden, muss folgende Zeile in der `signal.service` unter `/etc/systemd/system` bei `[Service]` eingetragen werden: `TimeoutStartSec = VALUE`. Danach `sudo systemctl daemon-reload` ausführen um die Änderung wirksam zu machen.
 * Sollte das Modul den Fehler: `A DBus error occured: TimedOut: Failed to activate service 'org.asamk.Signal': timed out (service_start_timeout=25000ms). Closing connection.` bringen und sich dadurch öfter neu verbinden, kann die Zeile `<limit name="service_start_timeout">VaLUE_IN_MS</limit>` in der Datei `/etc/dbus-1/system.d/org.asamk.Signal.conf` vor `</busconfig>` eingetragen werden. Danach `sudo systemctl reload dbus.service` ausführen um die Änderung wirksam zu machen.
 * Sollte während dem Versenden einer Nachricht DBus ein reply-Fehler bringen. Das Attribut DBusTimeout entsprechend setzen.
-systemctl daemon-reload
 
-# Wichtig
+# !!Wichtig!!
 
 Das Modul befindet sich noch in früher Entwicklungsphase. Fehlfunktionen daher nicht ausgeschlossen !
