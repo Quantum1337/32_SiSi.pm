@@ -378,14 +378,14 @@ sub SiSi_startMessageDaemon($){
 		STDERR->autoflush(1);
 
 		#Connect to the DBUS Instance
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus\' System Bus.\n");
+		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus\' System Bus.\n");
   	my $DBus = Net::DBus->system;
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus\' System Bus.\n");
 
 		print("Log:5,$child_hash->{TYPE} $child_hash->{NAME} - Setting DBus Timeout to " . AttrVal($child_hash->{NAME},"DBusTimeout",60) . "s.\n");
 		$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
 
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
+		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
 		my $signal_cli_service = $DBus->get_service($child_hash->{DBUS_SERVICE});
 		my $signal_cli = $signal_cli_service->get_object($child_hash->{DBUS_OBJECT});
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
