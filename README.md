@@ -17,12 +17,13 @@ Bisher nur Unterstützung für Linux!
 * Der Nutzer "signal-cli" muss angelegt ist.
 * Wenn schon eine Nummer registriert ist, liegt im Verzeichnis `~/.config/signal` ein Ordner "data", der den privaten Schlüssel der registrierten Nummer enthält. Diese muss rekursiv nach  `/var/lib/signal-cli/` kopiert werden. Danach müssen die Rechte auf den Nutzer signal-cli übertragen werden: `sudo chown -R signal-cli:signal-cli /var/lib/signal-cli/data`
 * Das Modul unterstützt momentan noch **nicht** den DBus "Session Bus", deshalb ist die Einrichtung des **"System Bus"** zwingend erforderlich.
+* Die Dateien, die im oben verlinkten Wiki benötigt werden, finden sich hier [hier](https://github.com/AsamK/signal-cli/tree/master/data)
 
 Ob alles richtig eingerichtet wurde, kann mit
 
 `dbus-send --system --type=method_call --print-reply --dest="org.asamk.Signal" /org/asamk/Signal org.asamk.Signal.sendMessage string:MessageText array:string: string:RECIPIENT`
 
-überprüft werden. Dabei wird eine Nachricht mit dem Inhalt "MessageText" an die Nummer "RECIPIENT" gesendet.
+überprüft werden. Dies kann beim ersten versuch - je nach System (RPI1) - mehrere Minuten dauern. Dies ist deshalb der Fall, da systemd den Prozess zunächst startet und hierfür die java Laufzeitumgebung geladen werden muss. Es wird dann eine Nachricht mit dem Inhalt "MessageText" an die Nummer "RECIPIENT" gesendet. Jede weitere Nachricht mithilfe des Befehl sollte in wenigen Sekunden ausgeführt sein.
 
 # Abhängigkeiten
 
@@ -54,7 +55,7 @@ Eine Nachricht kann mittels des Set-Kommandos sendMessage gesendet werden. Diese
 
 `Usage: set <NAME> sendMessage m="MESSAGE" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a="PATH1,PATH2,PATHN"]`
 
-Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für einen deutschen Empfänger.
+Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für einen deutsche Nummer.
 
 ### Reconnect
 
@@ -64,8 +65,17 @@ wird die Verbindung zum DBus-Service neu aufgebaut.
 
 ### Attribute
 
-* enable: [yes|no] Das Modul versucht eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. Wenn Verbunden wechselt STATE auf *Connect*.
+* enable: [yes|no] Wenn *enable* = yes, dann versucht das Modul eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. ist die Verbindung erfolgreich wechselt STATE auf *Connected*. Ansonsten in den FileLog schauen!
 * DBusTimout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
+
+# DBus und Systemd Timeouts
+
+Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Starts des Daemons bzw. wärend dem versenden von Nachrichten mit großen Anhängen kommen. Auf einem RPI1 dauert der start mitunter 5-Minuten
+
+* Sollte systemd eine Zeitüberschreitung während des Starts melden, muss folgende Zeile in der `signal.service` unter `/etc/systemd/system` bei `[Service]` eingetragen werden: `TimeoutStartSec = VALUE`. Danach `sudo systemctl daemon-reload` ausführen um die Änderung wirksam zu machen.
+* Sollte das Modul den Fehler: `A DBus error occured: TimedOut: Failed to activate service 'org.asamk.Signal': timed out (service_start_timeout=25000ms). Closing connection.` bringen und sich dadurch öfter neu verbinden, kann die Zeile `<limit name="service_start_timeout">VaLUE_IN_MS</limit>` in der Datei `/etc/dbus-1/system.d/org.asamk.Signal.conf` vor `</busconfig>` eingetragen werden. Danach `sudo systemctl reload dbus.service` ausführen um die Änderung wirksam zu machen.
+* Sollte während dem Versenden einer Nachricht DBus ein reply-Fehler bringen. Das Attribut DBusTimeout entsprechend setzen.
+systemctl daemon-reload
 
 # Wichtig
 
