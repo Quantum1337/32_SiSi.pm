@@ -66,7 +66,7 @@ wird die Verbindung zum DBus-Service neu aufgebaut.
 ### Attribute
 
 * enable: [yes|no] Wenn *enable* = yes, dann versucht das Modul eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. ist die Verbindung erfolgreich wechselt STATE auf *Connected*. Ansonsten in den FileLog schauen!
-* DBusTimout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
+* timout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
 * defaultRecipient: [RECIPIENT1,RECIPIENT2,RECIPIENTN] Wenn r=RECIPIENT1,RECIPIENT2,RECIPIENTN nicht angegeben, wird RECIPIENT1,RECIPIENT2,RECIPIENTN aus diesem Attribut gelesen.
 
 # DBus und systemd Timeouts
@@ -75,7 +75,7 @@ Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Star
 
 * Sollte systemd eine Zeitüberschreitung während des Starts melden, muss folgende Zeile in der `signal.service` unter `/etc/systemd/system` bei `[Service]` eingetragen werden: `TimeoutStartSec = VALUE_IN_SEC`. Danach `sudo systemctl daemon-reload` ausführen um die Änderung wirksam zu machen.
 * Sollte das Modul den Fehler: `A DBus error occured: TimedOut: Failed to activate service 'org.asamk.Signal': timed out (service_start_timeout=25000ms). Closing connection.` bringen und sich dadurch öfter neu verbinden, kann die Zeile `<limit name="service_start_timeout">VaLUE_IN_MS</limit>` in der Datei `/etc/dbus-1/system.d/org.asamk.Signal.conf` vor `</busconfig>` eingetragen werden. Danach `sudo systemctl reload dbus.service` ausführen um die Änderung wirksam zu machen.
-* Sollte das Modul den Fehler: `A DBus error occured: NoReply: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.. Closing connection.` bringen, sollte das Attribut DBusTimeout entsprechend gesetzt werden.
+* Sollte das Modul den Fehler: `A DBus error occured: NoReply: Did not receive a reply. Possible causes include: the remote application did not send a reply, the message bus security policy blocked the reply, the reply timeout expired, or the network connection was broken.. Closing connection.` bringen, sollte das Attribut "timeout" entsprechend gesetzt werden.
 
 # !!Wichtig!!
 

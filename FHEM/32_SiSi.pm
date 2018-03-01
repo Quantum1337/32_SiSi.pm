@@ -27,9 +27,9 @@ sub SiSi_Initialize($) {
 
     $hash->{AttrList} =
           "enable:no,yes " .
-					"DBusTimeout " .
-					"DBusService " .
-					"DBusObject " .
+					"timeout " .
+					"service " .
+					"object " .
 					"defaultNumber " .
           $readingFnAttributes;
 
@@ -52,8 +52,8 @@ sub SiSi_Define($$$) {
 
 	if($init_done){
 
-		$hash->{DBUS_OBJECT} = AttrVal($hash->{NAME},"DBusObject","/org/asamk/Signal");
-		$hash->{DBUS_SERVICE} = AttrVal($hash->{NAME},"DBusService","org.asamk.Signal");
+		$hash->{OBJECT} = AttrVal($hash->{NAME},"object","/org/asamk/Signal");
+		$hash->{SERVICE} = AttrVal($hash->{NAME},"service","org.asamk.Signal");
 
 		if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
@@ -245,7 +245,7 @@ sub SiSi_Read($){
 			next;
 		}else{
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured: $curr_message. Please inform the module owner. Closing connection to DBus service $hash->{DBUS_SERVICE}.");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured: $curr_message. Please inform the module owner. Closing connection to DBus service $hash->{SERVICE}.");
 
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			&SiSi_stopMessageDaemon($hash);
@@ -285,7 +285,7 @@ sub SiSi_Attr(@) {
 				}else{
 					return "Invalid argument $attr_value to $attr_name. Must be yes or no.";
 				}
-			}elsif($attr_name eq "DBusTimeout") {
+			}elsif($attr_name eq "timeout") {
 				if($attr_value =~ /^[0-9]+$/ && ($attr_value >= 60 && $attr_value <= 500)) {
 
 					my $hash = $defs{$name};
@@ -323,7 +323,7 @@ sub SiSi_Attr(@) {
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 			&SiSi_stopMessageDaemon($hash);
 
-		}elsif($attr_name eq "DBusTimeout"){
+		}elsif($attr_name eq "timeout"){
 			my $hash = $defs{$name};
 			if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
@@ -348,8 +348,8 @@ sub SiSi_Notify($$){
 
 	if($dev_hash->{NAME} eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events})){
 
-		$own_hash->{DBUS_OBJECT} = AttrVal($own_hash->{NAME},"DBusObject","/org/asamk/Signal");
-		$own_hash->{DBUS_SERVICE} = AttrVal($own_hash->{NAME},"DBusService","org.asamk.Signal");
+		$own_hash->{OBJECT} = AttrVal($own_hash->{NAME},"object","/org/asamk/Signal");
+		$own_hash->{SERVICE} = AttrVal($own_hash->{NAME},"service","org.asamk.Signal");
 
 		if(AttrVal($own_hash->{NAME},"enable","no") eq "yes"){
 
@@ -417,24 +417,24 @@ sub SiSi_startMessageDaemon($){
   	my $DBus = Net::DBus->system;
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus\' System Bus.\n");
 
-		print("Log:5,$child_hash->{TYPE} $child_hash->{NAME} - Setting DBus Timeout to " . AttrVal($child_hash->{NAME},"DBusTimeout",60) . "s.\n");
-		$DBus->timeout(AttrVal($child_hash->{NAME},"DBusTimeout",60) * 1000);
+		print("Log:5,$child_hash->{TYPE} $child_hash->{NAME} - Setting DBus Timeout to " . AttrVal($child_hash->{NAME},"timeout",60) . "s.\n");
+		$DBus->timeout(AttrVal($child_hash->{NAME},"timeout",60) * 1000);
 
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{DBUS_SERVICE}.\n");
+		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{SERVICE}.\n");
 		my $signal_cli_service = do {
     	local $@;
     	my $ret;
     	eval{
-						$ret = $DBus->get_service($child_hash->{DBUS_SERVICE}); 1
+						$ret = $DBus->get_service($child_hash->{SERVICE}); 1
 					} or die "$@\n";
     	$ret
 		};
-		my $signal_cli = $signal_cli_service->get_object($child_hash->{DBUS_OBJECT});
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{DBUS_SERVICE}.\n");
+		my $signal_cli = $signal_cli_service->get_object($child_hash->{OBJECT});
+		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{SERVICE}.\n");
 
 		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to listen to DBus-signal 'MessageReceived'.\n");
 		$signal_cli->connect_to_signal('MessageReceived', \&msg_received);
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{DBUS_SERVICE}.\n");
+		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{SERVICE}.\n");
 
 		#Not implemented in v0.5.6. But the functionality is in the master branch :)
 		#$signal_cli->connect_to_signal('ReceiptReceived', \&recp_received);
@@ -507,7 +507,7 @@ sub SiSi_startMessageDaemon($){
 							$logMessage =~ s/\x1A/\x20/g;
 						}
 
-						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{DBUS_SERVICE}\n");
+						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{SERVICE}\n");
 
 						eval{
 							$signal_cli->sendMessage($message,\@attachment,\@recipients);
@@ -553,18 +553,18 @@ sub SiSi_startMessageDaemon($){
 sub SiSi_restartMessageDaemon($){
 	my ($hash) = @_;
 
-	Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnect to DBus service $hash->{DBUS_SERVICE}.");
+	Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnect to DBus service $hash->{SERVICE}.");
 
 	&SiSi_stopMessageDaemon($hash);
 	if(&SiSi_startMessageDaemon($hash)){
 	}else{
-		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnection to DBus service $hash->{DBUS_SERVICE} failed.");
+		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Reconnection to DBus service $hash->{SERVICE} failed.");
 	}
 }
 
 sub SiSi_stopMessageDaemon($){
 	my ($hash) = @_;
-	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{DBUS_SERVICE}.");
+	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{SERVICE}.");
 	if(defined $hash->{FH} || defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
 
 		if(defined $hash->{FH}){
@@ -592,10 +592,10 @@ sub SiSi_stopMessageDaemon($){
 		}
 
 		$hash->{STATE} = "Disconnected";
-		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} closed.");
+		Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{SERVICE} closed.");
 
 	}else{
-		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} is already closed.");
+		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{SERVICE} is already closed.");
 	}
 
 	return;
@@ -605,14 +605,14 @@ sub SiSi_MessageDaemonRunning($){
 	my ($hash) = @_;
 
 	if(!defined $hash->{PID}){
-		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} not established.");
+		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{SERVICE} not established.");
 		return 0;
 	}
 
 	if(!waitpid($hash->{PID},WNOHANG)){
 		return 1;
 	}else{
-		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{DBUS_SERVICE} lost.");
+		Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Connection to DBus service $hash->{SERVICE} lost.");
 		return 0;
 	}
 }
