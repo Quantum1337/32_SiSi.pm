@@ -27,7 +27,7 @@ Ob alles richtig eingerichtet wurde, kann mit
 
 # Abhängigkeiten
 
-Die Perl Module **Net::DBus** und **IO::Socket** müssen auf dem System installiert sein.
+Das Perl Module **Net::DBus** in der Version >= 1.1.0 mussen auf dem System installiert sein. Die installierte Version kann mit: `perl -MNet::DBus -le 'print $Net::DBus::VERSION'` überprüft werden.
 
 # Installation
 
@@ -53,7 +53,7 @@ Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anh
 
 Eine Nachricht kann mittels des Set-Kommandos sendMessage gesendet werden. Dieses wird wie folgt angesprochen:
 
-`Usage: set <NAME> sendMessage m="MESSAGE" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a="PATH1,PATH2,PATHN"]`
+`Usage: set <NAME> sendMessage m="MESSAGE" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
 
 Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer.
 
@@ -67,6 +67,7 @@ wird die Verbindung zum DBus-Service neu aufgebaut.
 
 * enable: [yes|no] Wenn *enable* = yes, dann versucht das Modul eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. ist die Verbindung erfolgreich wechselt STATE auf *Connected*. Ansonsten in den FileLog schauen!
 * DBusTimout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
+* defaultRecipient: [RECIPIENT1,RECIPIENT2,RECIPIENTN] Wenn r=RECIPIENT1,RECIPIENT2,RECIPIENTN nicht angegeben, wird RECIPIENT1,RECIPIENT2,RECIPIENTN aus diesem Attribut gelesen.
 
 # DBus und systemd Timeouts
 

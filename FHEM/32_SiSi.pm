@@ -30,6 +30,7 @@ sub SiSi_Initialize($) {
 					"DBusTimeout " .
 					"DBusService " .
 					"DBusObject " .
+					"defaultNumber " .
           $readingFnAttributes;
 
     $hash->{parseParams} = 1;
@@ -116,20 +117,31 @@ sub SiSi_Set($$$) {
 
 		 my $attachment = "NONE";
 		 my $message = "";
+		 my $recipient = "";
 
 		 if(!&SiSi_MessageDaemonRunning($hash)){
 
 			 return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
 
-		 }elsif(!defined $h->{r} && (!defined $h->{m})){
+		 }elsif(!defined $h->{m} || $h->{m} eq ""){
 
-			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" r=RECIPIENT1,RECIPIENT2,RECIPIENTN [a=\"PATH1,PATH2,PATHN\"]"
+			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a=\"PATH1,PATH2,PATHN\"]"
 
-		 }elsif($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
+		 }elsif(!defined $h->{r} && !defined AttrVal($hash->{NAME},"defaultNumber",undef)){
 
-			 return "RECIPIENT must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
+			 return "Specify a RECIPIENT with r=RECIPIENT or set attr $hash->{NAME} defaultNumber RECIPIENT"
 
 		 }else{
+
+			 if(defined $h->{r}){
+				 if($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
+					 return "RECIPIENT must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
+				 }else{
+				 	 $recipient = $h->{r};
+			 	 }
+			 }else{
+				 $recipient = AttrVal($hash->{NAME},"defaultNumber",undef);
+			 }
 
 			 if(defined $h->{m}){
 				 $message = $h->{m};
@@ -142,7 +154,7 @@ sub SiSi_Set($$$) {
 			 #Substitute \n with the \x1A "substitute" character
 			 $message =~ s/\\n/\x1A/g;
 
-			 syswrite($hash->{FH},"Send:Recipients:$h->{r},Attachments:$attachment,Message:$message\n");
+			 syswrite($hash->{FH},"Send:Recipients:$recipient,Attachments:$attachment,Message:$message\n");
 
 			 return;
 
@@ -289,6 +301,16 @@ sub SiSi_Attr(@) {
 				}else{
 
 					return "Invalid argument $attr_value to $attr_name. Must be nummeric and between 60 and 500"
+
+				}
+			}elsif($attr_name eq "defaultNumber") {
+				if($attr_value =~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/) {
+
+					return undef;
+
+				}else{
+
+					return "Invalid argument $attr_value to $attr_name. Must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
 
 				}
 			}
