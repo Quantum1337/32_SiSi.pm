@@ -30,7 +30,7 @@ sub SiSi_Initialize($) {
 					"timeout " .
 					"service " .
 					"object " .
-					"defaultNumber " .
+					"defaultRecipient " .
           $readingFnAttributes;
 
     $hash->{parseParams} = 1;
@@ -110,7 +110,7 @@ sub SiSi_Set($$$) {
 	}elsif($a->[1] eq "sendMessage"){
 
 		 my $attachment = "NONE";
-		 my $message = "";
+		 my $text = "";
 		 my $recipient = "";
 
 		 if(!&SiSi_MessageDaemonRunning($hash)){
@@ -121,9 +121,9 @@ sub SiSi_Set($$$) {
 
 			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a=\"PATH1,PATH2,PATHN\"]"
 
-		 }elsif(!defined $h->{r} && !defined AttrVal($hash->{NAME},"defaultNumber",undef)){
+		 }elsif(!defined $h->{r} && !defined AttrVal($hash->{NAME},"defaultRecipient",undef)){
 
-			 return "Specify a RECIPIENT with r=RECIPIENT or set attr $hash->{NAME} defaultNumber RECIPIENT"
+			 return "Specify a RECIPIENT with r=RECIPIENT or set attr $hash->{NAME} defaultRecipient RECIPIENT"
 
 		 }else{
 
@@ -134,11 +134,11 @@ sub SiSi_Set($$$) {
 				 	 $recipient = $h->{r};
 			 	 }
 			 }else{
-				 $recipient = AttrVal($hash->{NAME},"defaultNumber",undef);
+				 $recipient = AttrVal($hash->{NAME},"defaultRecipient",undef);
 			 }
 
 			 if(defined $h->{m}){
-				 $message = $h->{m};
+				 $text = $h->{m};
 			 }
 
 			 if(defined $h->{a}){
@@ -146,9 +146,9 @@ sub SiSi_Set($$$) {
 			 }
 
 			 #Substitute \n with the \x1A "substitute" character
-			 $message =~ s/\\n/\x1A/g;
+			 $text =~ s/\\n/\x1A/g;
 
-			 syswrite($hash->{FH},"Send:Recipients:$recipient,Attachments:$attachment,Message:$message\n");
+			 syswrite($hash->{FH},"Send:Recipients:$recipient,Attachments:$attachment,Text:$text\n");
 
 			 return;
 
@@ -186,32 +186,32 @@ sub SiSi_Read($){
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Message:(.*)$/){
+		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Text:(.*)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
-			my $groupID = $3;
+			my $groupId = $3;
 			my $attachment = $4;
-			my $message = $5;
+			my $text = $5;
 			my $logMessage = "";
 
-			$logMessage = $message;
-			$message =~ s/\x1A/\n/g;
+			$logMessage = $text;
+			$text =~ s/\x1A/\n/g;
 			$timestamp = strftime("%Y-%m-%d %H:%M:%S",localtime($timestamp/1000));
 
 			readingsBeginUpdate($hash);
-			readingsBulkUpdate($hash, "recvTimestamp", $timestamp);
-			readingsBulkUpdate($hash, "recvMessage", $message);
-			readingsBulkUpdate($hash, "recvSender", $sender);
-			readingsBulkUpdate($hash, "recvGroupID", $groupID);
-			readingsBulkUpdate($hash, "recvAttachment", $attachment);
+			readingsBulkUpdate($hash, "msgTimestamp", $timestamp);
+			readingsBulkUpdate($hash, "msgText", $text);
+			readingsBulkUpdate($hash, "msgSender", $sender);
+			readingsBulkUpdate($hash, "msgGroupId", $groupId);
+			readingsBulkUpdate($hash, "msgAttachment", $attachment);
 			readingsEndUpdate($hash, 1);
 
 			$logMessage =~ s/\x1A/\x20/g;
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logMessage' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupID' and attachment: '$attachment'");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logMessage' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupId' and attachment: '$attachment'");
 
-		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
+		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Text:(.*)$/){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$3' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
 
@@ -297,7 +297,7 @@ sub SiSi_Attr(@) {
 					return "Invalid argument $attr_value to $attr_name. Must be nummeric and between 60 and 500"
 
 				}
-			}elsif($attr_name eq "defaultNumber") {
+			}elsif($attr_name eq "defaultRecipient") {
 				if($attr_value =~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/) {
 
 					return undef;
@@ -439,18 +439,18 @@ sub SiSi_startMessageDaemon($){
 
 		sub msg_received() {
 
-			my ($timestamp,$sender,$groupID,$message,$attach) = @_;
+			my ($timestamp,$sender,$groupId,$text,$attach) = @_;
 
 			print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - A new message was received on DBus-signal 'MessageReceived'.\n");
 
-			$groupID->[0] = "NONE" unless $groupID->[0];
+			$groupId->[0] = "NONE" unless $groupId->[0];
 			$attach->[0] = "NONE" unless $attach->[0];
 
 			#Substitute \n with the \x1A "substitute" character
-			$message =~ s/\n/\x1A/g;
+			$text =~ s/\n/\x1A/g;
 
 			#Send the received data to the parent
-			print("Received:Timestamp:$timestamp,Sender:$sender,GroupID:$groupID->[0],Attachment:$attach->[0],Message:$message\n");
+			print("Received:Timestamp:$timestamp,Sender:$sender,GroupID:$groupId->[0],Attachment:$attach->[0],Text:$text\n");
 
 		}
 
@@ -474,11 +474,11 @@ sub SiSi_startMessageDaemon($){
 				while(@messages){
 					$curr_message = shift(@messages);
 
-					if($curr_message =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Message:(.*)$/){
+					if($curr_message =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Text:(.*)$/){
 
 						my @attachment = ();
 						my @recipients = split(/,/,$1);
-						my $message = "";
+						my $text = "";
 						my $logMessage = "";
 
 						if($2 ne "NONE"){
@@ -486,24 +486,24 @@ sub SiSi_startMessageDaemon($){
 						}
 
 						if(defined $3){
-							$message = $3;
+							$text = $3;
 							$logMessage = $3;
 
-							$message =~ s/\x1A/\n/g;
+							$text =~ s/\x1A/\n/g;
 							$logMessage =~ s/\x1A/\x20/g;
 						}
 
 						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{SERVICE}\n");
 
 						eval{
-							$signal_cli->sendMessage($message,\@attachment,\@recipients);
+							$signal_cli->sendMessage($text,\@attachment,\@recipients);
 						};
 						if($@){
 							syswrite($hash->{FH},"$@\n");
 							next;
 						}
 
-						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Message:$logMessage\n");
+						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Text:$logMessage\n");
 
 					}else{
 						next;
