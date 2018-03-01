@@ -40,16 +40,16 @@ my $attrChanged = 0;
 sub SiSi_Define($$$) {
 	my ($hash, $a, $h) = @_;
 
+	return "Error while loading $NETDBus. Please install $NETDBus" if $NETDBus;
+	return "Error while loading $NETDBusReactor. Please install $NETDBusReactor" if $NETDBusReactor;
+	return "Error while loading $NETDBusCallback. Please install $NETDBusCallback" if $NETDBusCallback;
+
+	$Net::DBus::VERSION =~ /^([0-9]+)\.([0-9]+)\.[0-9]+$/;
+	if($1 < 1 || $2 < 1){
+		return "Please install Net::DBus in version 1.1.0 or higher. Your version is: $Net::DBus::VERSION"
+	}
+
 	if($init_done){
-
-		return "Error while loading $NETDBus. Please install $NETDBus" if $NETDBus;
-		return "Error while loading $NETDBusReactor. Please install $NETDBusReactor" if $NETDBusReactor;
-		return "Error while loading $NETDBusCallback. Please install $NETDBusCallback" if $NETDBusCallback;
-
-		$Net::DBus::VERSION =~ /^([0-9]+)\.([0-9]+)\.[0-9]+$/;
-		if($1 < 1 || $2 < 1){
-			return "Please install Net::DBus in Version 1.1.0 or higher. Your Version is: $Net::DBus::VERSION"
-		}
 
 		$hash->{DBUS_OBJECT} = AttrVal($hash->{NAME},"DBusObject","/org/asamk/Signal");
 		$hash->{DBUS_SERVICE} = AttrVal($hash->{NAME},"DBusService","org.asamk.Signal");
@@ -233,11 +233,11 @@ sub SiSi_Read($){
 			next;
 		}else{
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured. Closing connection to DBus service $hash->{DBUS_SERVICE}. $curr_message");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - An unexpected error occured: $curr_message. Please inform the module owner. Closing connection to DBus service $hash->{DBUS_SERVICE}.");
 
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
-			&SiSi_restartMessageDaemon($hash);
-			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+			&SiSi_stopMessageDaemon($hash);
+			InternalTimer(gettimeofday() + 30,"SiSi_MessageDaemonWatchdog",$hash);
 
 	}
 
