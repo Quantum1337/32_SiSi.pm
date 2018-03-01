@@ -145,7 +145,11 @@ sub SiSi_Set($$$) {
 			 }
 
 			 if(defined $h->{a}){
-				 $attachment = $h->{a};
+				 if($h->{a} =~ /^\/.+$/){
+				 	$attachment = $h->{a};
+				 }else{
+					return "PATH has to be absolute. Beginning at root /"
+				 }
 			 }
 
 			 #Substitute \n with the \x1A "substitute" character
