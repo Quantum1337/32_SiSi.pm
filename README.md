@@ -42,10 +42,10 @@ Danach in FHEM mittels  `reload 32_SiSi.pm` das Modul einbinden.
 
 Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei werden folgende Modul readings gesetzt.
 
-* recvMessage: Für die empfangene Nachricht.
-* recvSender: Für den Sender der Nachricht.
-* recvGroupID: Für die GruppenID in der die Nachricht verfasst wurde.
-* recvTimestamp: Für den Zeitstempel, bei der die Nachricht abgesendet wurde.
+* msgText: Für die empfangene Nachricht.
+* msgSender: Für den Sender der Nachricht.
+* msgGroupId: Für die GruppenID in der die Nachricht verfasst wurde.
+* msgTimestamp: Für den Zeitstempel, bei der die Nachricht abgesendet wurde.
 
 ### Senden einer Nachricht
 
