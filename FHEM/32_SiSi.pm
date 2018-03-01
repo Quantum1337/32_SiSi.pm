@@ -9,7 +9,10 @@ use Socket;
 use POSIX ":sys_wait_h";
 
 my %SiSi_sets = (
-	"sendMessage"	=> "",
+	"message" => "",
+	"msg" => "",
+	"_msg" => "",
+	"send" => "",
 	"reconnect:noArg"   => ""
 );
 
@@ -107,7 +110,7 @@ sub SiSi_Set($$$) {
 					return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
 				}
 
-	}elsif($a->[1] eq "sendMessage"){
+	}elsif(($a->[1] eq "message") || ($a->[1] eq "msg") || ($a->[1] eq "_msg") || ($a->[1] eq "send") ){
 
 		 my $attachment = "NONE";
 		 my $text = "";

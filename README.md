@@ -59,9 +59,9 @@ Beim update der *prev* Readings werden keine Events getriggert!
 
 Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anhängen gesendet werden. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
 
-Eine Nachricht kann mittels des Set-Kommandos sendMessage gesendet werden. Dieses wird wie folgt angesprochen:
+Eine Nachricht kann mittels der Set-Kommandos send,msg,\_msg,message gesendet werden. Dieses wird wie folgt angesprochen:
 
-`Usage: set <NAME> sendMessage m="MESSAGE" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
+`Usage: set <NAME> send|msg|_msg|message m="MESSAGE" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
 
 Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer.
 
