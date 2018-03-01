@@ -196,9 +196,9 @@ sub SiSi_Read($){
 			my $groupId = $3;
 			my $attachment = $4;
 			my $text = $5;
-			my $logMessage = "";
+			my $logText = "";
 
-			$logMessage = $text;
+			$logText = $text;
 			$text =~ s/\x1A/\n/g;
 			$timestamp = strftime("%Y-%m-%d %H:%M:%S",localtime($timestamp/1000));
 
@@ -218,9 +218,9 @@ sub SiSi_Read($){
 			readingsBulkUpdate($hash, "msgAttachment", $attachment);
 			readingsEndUpdate($hash, 1);
 
-			$logMessage =~ s/\x1A/\x20/g;
+			$logText =~ s/\x1A/\x20/g;
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logMessage' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupId' and attachment: '$attachment'");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupId' and attachment: '$attachment'");
 
 		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Text:(.*)$/){
 
@@ -484,7 +484,7 @@ sub SiSi_startMessageDaemon($){
 						my @attachment = ();
 						my @recipients = split(/,/,$1);
 						my $text = "";
-						my $logMessage = "";
+						my $logText = "";
 
 						if($2 ne "NONE"){
 							@attachment = split(/,/,$2);;
@@ -492,10 +492,10 @@ sub SiSi_startMessageDaemon($){
 
 						if(defined $3){
 							$text = $3;
-							$logMessage = $3;
+							$logText = $3;
 
 							$text =~ s/\x1A/\n/g;
-							$logMessage =~ s/\x1A/\x20/g;
+							$logText =~ s/\x1A/\x20/g;
 						}
 
 						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{SERVICE}\n");
@@ -513,7 +513,7 @@ sub SiSi_startMessageDaemon($){
 										next;
 						};
 
-						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Text:$logMessage\n");
+						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Text:$logText\n");
 
 					}else{
 						next;
