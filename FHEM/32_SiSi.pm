@@ -199,6 +199,16 @@ sub SiSi_Read($){
 			$text =~ s/\x1A/\n/g;
 			$timestamp = strftime("%Y-%m-%d %H:%M:%S",localtime($timestamp/1000));
 
+
+
+			readingsBeginUpdate($hash);
+			readingsBulkUpdate($hash, "prevMsgTimestamp", ReadingsVal($hash->{NAME}, "msgTimestamp", undef)) if defined ReadingsVal($hash->{NAME}, "msgTimestamp", undef);
+			readingsBulkUpdate($hash, "prevMsgText", ReadingsVal($hash->{NAME}, "msgText", undef)) if defined ReadingsVal($hash->{NAME}, "msgText", undef);
+			readingsBulkUpdate($hash, "prevMsgSender", ReadingsVal($hash->{NAME}, "msgSender", undef)) if defined ReadingsVal($hash->{NAME}, "msgSender", undef);
+			readingsBulkUpdate($hash, "prevMsgGroupId", ReadingsVal($hash->{NAME}, "msgGroupId", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupId", undef);
+			readingsBulkUpdate($hash, "prevMsgAttachment", ReadingsVal($hash->{NAME}, "msgAttachment", undef)) if defined ReadingsVal($hash->{NAME}, "msgAttachment", undef);
+			readingsEndUpdate($hash, 0);
+
 			readingsBeginUpdate($hash);
 			readingsBulkUpdate($hash, "msgTimestamp", $timestamp);
 			readingsBulkUpdate($hash, "msgText", $text);

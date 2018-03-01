@@ -42,10 +42,18 @@ Danach in FHEM mittels  `reload 32_SiSi.pm` das Modul einbinden.
 
 Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei werden folgende Modul readings gesetzt.
 
-* msgText: Für die empfangene Nachricht.
-* msgSender: Für den Sender der Nachricht.
-* msgGroupId: Für die GruppenID in der die Nachricht verfasst wurde.
-* msgTimestamp: Für den Zeitstempel, bei der die Nachricht abgesendet wurde.
+* msgText: Für den Text der letzten empfangenen Nachricht.
+* msgSender: Für den Sender der letzten Nachricht.
+* msgGroupId: Für die GruppenId in der die letzte Nachricht verfasst wurde.
+* msgTimestamp: Für den Zeitstempel, bei der die letzte Nachricht abgesendet wurde.
+* msgAttachment: Für den Anhang der letzten Nachricht.
+
+* prevMsgText: Für die vorherig empfangene Nachricht.
+* prevMsgSender: Für den Sender der vorherigen Nachricht.
+* prevMsgGroupId: Für die GruppenId in der die vorherige Nachricht verfasst wurde.
+* prevMsgTimestamp: Für den Zeitstempel, bei der die vorherige Nachricht abgesendet wurde.
+
+Beim update der *prev* Readings werden keine Events getriggert!
 
 ### Senden einer Nachricht
 
