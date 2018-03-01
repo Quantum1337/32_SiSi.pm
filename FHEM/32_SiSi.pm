@@ -2,9 +2,9 @@ package main;
 use strict;
 use warnings;
 
-use Net::DBus;
-use Net::DBus::Reactor;
-use Net::DBus::Callback;
+eval "use Net::DBus;1" or my $NETDBus = "Net::DBus";
+eval "use Net::DBus::Reactor;1" or my $NETDBusReactor = "Net::DBus::Reactor";
+eval "use Net::DBus::Callback;1" or my $NETDBusCallback = "Net::DBus::Callback";
 use Socket;
 use POSIX ":sys_wait_h";
 
@@ -41,6 +41,15 @@ sub SiSi_Define($$$) {
 	my ($hash, $a, $h) = @_;
 
 	if($init_done){
+
+		return "Error while loading $NETDBus. Please install $NETDBus" if $NETDBus;
+		return "Error while loading $NETDBusReactor. Please install $NETDBusReactor" if $NETDBusReactor;
+		return "Error while loading $NETDBusCallback. Please install $NETDBusCallback" if $NETDBusCallback;
+
+		$Net::DBus::VERSION =~ /^([0-9]+)\.([0-9]+)\.[0-9]+$/;
+		if($1 < 1 || $2 < 1){
+			return "Please install Net::DBus in Version 1.1.0 or higher. Your Version is: $Net::DBus::VERSION"
+		}
 
 		$hash->{DBUS_OBJECT} = AttrVal($hash->{NAME},"DBusObject","/org/asamk/Signal");
 		$hash->{DBUS_SERVICE} = AttrVal($hash->{NAME},"DBusService","org.asamk.Signal");
