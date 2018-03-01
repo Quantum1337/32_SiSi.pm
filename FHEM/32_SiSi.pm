@@ -50,12 +50,10 @@ sub SiSi_Define($$$) {
 		return "Please install Net::DBus in version 1.1.0 or higher. Your version is: $Net::DBus::VERSION"
 	}
 
-	if($init_done){
+	$hash->{OBJECT} = AttrVal($hash->{NAME},"object","/org/asamk/Signal");
+	$hash->{SERVICE} = AttrVal($hash->{NAME},"service","org.asamk.Signal");
 
-		$hash->{OBJECT} = AttrVal($hash->{NAME},"object","/org/asamk/Signal");
-		$hash->{SERVICE} = AttrVal($hash->{NAME},"service","org.asamk.Signal");
-
-		if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
+	if($init_done && AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
 			RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
 
@@ -65,13 +63,9 @@ sub SiSi_Define($$$) {
 
 			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
 
-		}else{
-			$hash->{STATE} = "Disconnected";
-		}
-	}else{
-		$hash->{STATE} = "Disconnected";
 	}
 
+	$hash->{STATE} = "Disconnected";
 	return
 }
 
@@ -346,12 +340,7 @@ sub SiSi_Notify($$){
 
 	my $events = deviceEvents($dev_hash, 1);
 
-	if($dev_hash->{NAME} eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events})){
-
-		$own_hash->{OBJECT} = AttrVal($own_hash->{NAME},"object","/org/asamk/Signal");
-		$own_hash->{SERVICE} = AttrVal($own_hash->{NAME},"service","org.asamk.Signal");
-
-		if(AttrVal($own_hash->{NAME},"enable","no") eq "yes"){
+	if($dev_hash->{NAME} eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events}) && AttrVal($own_hash->{NAME},"enable","no") eq "yes"){
 
 			RemoveInternalTimer($own_hash,"SiSi_MessageDaemonWatchdog");
 
@@ -361,9 +350,6 @@ sub SiSi_Notify($$){
 
 			InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$own_hash);
 
-		}else{
-			$own_hash->{STATE} = "Disconnected";
-		}
 	}
 
 	return
@@ -565,7 +551,7 @@ sub SiSi_restartMessageDaemon($){
 sub SiSi_stopMessageDaemon($){
 	my ($hash) = @_;
 	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{SERVICE}.");
-	if(defined $hash->{FH} || defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
+	if(defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
 
 		if(defined $hash->{FH}){
 			close($hash->{FH});
