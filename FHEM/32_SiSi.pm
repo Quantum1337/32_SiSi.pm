@@ -513,7 +513,7 @@ sub SiSi_startMessageDaemon($){
 
 		sub msg_timeout() {
 			my ($hash) = @_;
-			my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
+			#my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
 
 			#if($processID =~ /^[0-9]+/){
 				#syswrite($hash->{FH},"Log:3,ALIVE $processID\n");
