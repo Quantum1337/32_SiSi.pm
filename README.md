@@ -27,7 +27,7 @@ Ob alles richtig eingerichtet wurde, kann mit
 
 # Abhängigkeiten
 
-Das Perl Module **Net::DBus** in der Version >= 1.1.0 mussen auf dem System installiert sein. Die installierte Version kann mit: `perl -MNet::DBus -le 'print $Net::DBus::VERSION'` überprüft werden.
+Das Perl Modul **Net::DBus** in der Version >= 1.1.0 muss auf dem System installiert sein. Die installierte Version kann mit: `perl -MNet::DBus -le 'print $Net::DBus::VERSION'` überprüft werden.
 
 # Installation
 
