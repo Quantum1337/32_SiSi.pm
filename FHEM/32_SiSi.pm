@@ -379,12 +379,25 @@ sub SiSi_startMessageDaemon($){
 
 	if (!$child_pid){
 		#Here lives the child process
-		sub msg_received();
-		sub msg_send();
-
 		my $child_hash = $hash;
-
 		$0 = $child_hash->{NAME} . "_tx";
+
+		$child_hash->{DBUS}->{RECEIVED}->{MESSAGE} = sub {
+
+			my ($timestamp,$sender,$groupId,$text,$attachment) = @_;
+
+			print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - A new message was received on DBus-signal 'MessageReceived'.\n");
+
+			$groupId->[0] = "NONE" unless $groupId->[0];
+			$attachment->[0] = "NONE" unless $attachment->[0];
+
+			#Substitute \n with the \x1A "substitute" character
+			$text =~ s/\n/\x1A/g;
+
+			#Send the received data to the parent
+			print("Received:Timestamp:$timestamp,Sender:$sender,GroupID:$groupId->[0],Attachment:$attachment->[0],Text:$text\n");
+
+		};
 
 		close $parentsEnd;
 		close STDIN;
@@ -401,68 +414,79 @@ sub SiSi_startMessageDaemon($){
 		STDOUT->autoflush(1);
 
 		#Connect to the DBUS Instance
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus\' System Bus.\n");
-  	$child_hash->{DBUS}->{BUS} = Net::DBus->system;
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus\' System Bus.\n");
+		&SiSi_connectToDBus($child_hash);
+		&SiSi_connectToDBusService($child_hash);
+		&SiSi_connectToDBusObject($child_hash);
 
-		print("Log:5,$child_hash->{TYPE} $child_hash->{NAME} - Setting DBus Timeout to " . AttrVal($child_hash->{NAME},"timeout",60) . "s.\n");
-		$child_hash->{DBUS}->{BUS}->timeout(AttrVal($child_hash->{NAME},"timeout",60) * 1000);
+		exit &SiSi_childMain($child_hash);
 
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to connect to DBus service $child_hash->{SERVICE}.\n");
+		sub SiSi_childMain($){
+			my ($hash) = @_;
 
-    eval{
-			$child_hash->{DBUS}->{SERVICE} = $child_hash->{DBUS}->{BUS}->get_service($child_hash->{SERVICE}); 1
-		} or do{
-						if($@ =~ /^org\.freedesktop\.DBus\.Error\.TimedOut:.*: t(.+)$/){
-							print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to connect: T$1.\n");
-						}elsif($@ =~ /^org\.freedesktop\.DBus\.Error\.NoReply: (.+)\. .*$/){
-							print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to connect: $1.\n");
-						}else{
-							print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to connect: $@\n");
-						}
-						die;
-		};
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Trying to listen to DBus-signal 'MessageReceived'.\n");
+			$hash->{DBUS}->{OBJECT}->connect_to_signal('MessageReceived', $hash->{DBUS}->{RECEIVED}->{MESSAGE});
+			syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{SERVICE}.\n");
 
-		$child_hash->{DBUS}->{OBJECT} = $child_hash->{DBUS}->{SERVICE}->get_object($child_hash->{OBJECT});
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Connected to DBus service $child_hash->{SERVICE}.\n");
+			#Not implemented in v0.5.6. But the functionality is in the master branch :)
+			#$signal_cli->connect_to_signal('ReceiptReceived', \&recp_received);
 
-		print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - Trying to listen to DBus-signal 'MessageReceived'.\n");
-		$child_hash->{DBUS}->{OBJECT}->connect_to_signal('MessageReceived', \&msg_received);
-		print("Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Listening to DBus-signal 'MessageReceived' on service $hash->{SERVICE}.\n");
+			#Setting up an event Loop
+			$hash->{DBUS}->{REACTOR} = Net::DBus::Reactor->main();
+			$hash->{DBUS}->{REACTOR}->add_read($hash->{FD},Net::DBus::Callback->new(method => \&SiSi_childRead, args => [$hash]));
+			#$event_loop->add_timeout(20000, Net::DBus::Callback->new(method => \&SiSi_SignalDaemonWatchdog, args => [$child_hash]));
 
-		#Not implemented in v0.5.6. But the functionality is in the master branch :)
-		#$signal_cli->connect_to_signal('ReceiptReceived', \&recp_received);
+			#Let the parent know that the child is connected
+			syswrite($hash->{FH},"State:Connected\n");
 
-		#Setting up an event Loop
-		$child_hash->{DBUS}->{REACTOR} = Net::DBus::Reactor->main();
-		$child_hash->{DBUS}->{REACTOR}->add_read($child_hash->{FD},Net::DBus::Callback->new(method => \&msg_send, args => [$child_hash]));
-		#$event_loop->add_timeout(20000, Net::DBus::Callback->new(method => \&msg_timeout, args => [$child_hash]));
-
-		#Let the parent know that the child is connected
-		print("State:Connected\n");
-
-		#Start the event loop
-		$child_hash->{DBUS}->{REACTOR}->run();
-		exit;
-
-		sub msg_received() {
-
-			my ($timestamp,$sender,$groupId,$text,$attachment) = @_;
-
-			print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - A new message was received on DBus-signal 'MessageReceived'.\n");
-
-			$groupId->[0] = "NONE" unless $groupId->[0];
-			$attachment->[0] = "NONE" unless $attachment->[0];
-
-			#Substitute \n with the \x1A "substitute" character
-			$text =~ s/\n/\x1A/g;
-
-			#Send the received data to the parent
-			print("Received:Timestamp:$timestamp,Sender:$sender,GroupID:$groupId->[0],Attachment:$attachment->[0],Text:$text\n");
+			#Start the event loop
+			$hash->{DBUS}->{REACTOR}->run();
 
 		}
 
-		sub msg_send(){
+		sub SiSi_connectToDBus($){
+			my ($hash) = @_;
+
+			syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to connect to DBus\' System Bus.\n");
+	  	$hash->{DBUS}->{BUS} = Net::DBus->system;
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Connected to DBus\' System Bus.\n");
+
+			syswrite($hash->{FH},"Log:5,$hash->{TYPE} $hash->{NAME} - Setting DBus Timeout to " . AttrVal($hash->{NAME},"timeout",60) . "s.\n");
+			$hash->{DBUS}->{BUS}->timeout(AttrVal($hash->{NAME},"timeout",60) * 1000);
+
+		}
+
+		sub SiSi_connectToDBusService($){
+			my ($hash) = @_;
+
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Trying to connect to DBus service $hash->{SERVICE}.\n");
+
+	    eval{
+				$hash->{DBUS}->{SERVICE} = $hash->{DBUS}->{BUS}->get_service($hash->{SERVICE}); 1
+			} or do{
+							if($@ =~ /^org\.freedesktop\.DBus\.Error\.TimedOut:.*: t(.+)$/){
+								syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to connect to DBus service $hash->{SERVICE}: T$1.\n");
+							}elsif($@ =~ /^org\.freedesktop\.DBus\.Error\.NoReply: (.+)\. .*$/){
+								syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to connect to DBus service $hash->{SERVICE}: $1.\n");
+							}else{
+								syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to connect to DBus service $hash->{SERVICE}: $@\n");
+							}
+							die;
+			};
+
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Connected to DBus service $hash->{SERVICE}.\n");
+
+		}
+
+		sub SiSi_connectToDBusObject($){
+			my ($hash) = @_;
+
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Trying to connect to DBus Object $hash->{OBJECT}.\n");
+			$hash->{DBUS}->{OBJECT} = $hash->{DBUS}->{SERVICE}->get_object($hash->{OBJECT});
+			syswrite($hash->{FH},"Log:4,$hash->{TYPE} $hash->{NAME} - Connected to DBus Object $hash->{OBJECT}.\n");
+
+		}
+
+		sub SiSi_childRead(){
 				my ($hash) = @_;
 
 				my $buffer;
@@ -473,7 +497,7 @@ sub SiSi_startMessageDaemon($){
 			  $sysreadReturn = sysread($hash->{FH}, $buffer, 65536 );
 
 				if($sysreadReturn < 0 || !defined $sysreadReturn){
-					syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Error while reading data from parent.\n");
+					syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Error while reading data from parent.\n");
 					return;
 				}
 
@@ -501,17 +525,17 @@ sub SiSi_startMessageDaemon($){
 							$logText =~ s/\x1A/\x20/g;
 						}
 
-						syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $child_hash->{SERVICE}\n");
+						syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $hash->{SERVICE}\n");
 
 						eval{
 							$hash->{DBUS}->{OBJECT}->sendMessage($text,\@attachment,\@recipients); 1
 						} or do{
 										if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
-											syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to send: $1.\n");
+											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1.\n");
 										}elsif($@ =~ /^org\.freedesktop\.dbus\.exceptions\.DBusExecutionException: (.+)$/){
-											syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to send: $1 - Maybe wrong Number?\n");
+											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1 - Maybe wrong Number?\n");
 										}else{
-											syswrite($hash->{FH},"Log:3,$child_hash->{TYPE} $child_hash->{NAME} - Failed to send: @1\n");
+											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $@\n");
 										}
 										next;
 						};
@@ -524,7 +548,7 @@ sub SiSi_startMessageDaemon($){
 			}
 		}
 
-		sub msg_timeout() {
+		sub SiSi_SignalDaemonWatchdog() {
 			my ($hash) = @_;
 			#my $processID = `ps -eo uname,comm,pid | awk '/^signal-\+ java/{print \$3}'`;
 
