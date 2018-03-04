@@ -48,8 +48,8 @@ sub SiSi_Define($$$) {
 	return "Error while loading $NETDBusReactor. Please install $NETDBusReactor" if $NETDBusReactor;
 	return "Error while loading $NETDBusCallback. Please install $NETDBusCallback" if $NETDBusCallback;
 
-	$Net::DBus::VERSION =~ /^([0-9]+)\.([0-9]+)\.[0-9]+$/;
-	if($1 < 1 || $2 < 1){
+	$Net::DBus::VERSION =~ /^([0-9]+)\.([0-9]+)\.([0-9]+)$/;
+	if(($1*100+$2*10+$3) < 110){
 		return "Please install Net::DBus in version 1.1.0 or higher. Your version is: $Net::DBus::VERSION"
 	}
 
