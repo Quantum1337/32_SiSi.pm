@@ -226,10 +226,6 @@ sub SiSi_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupId' and attachment: '$attachment'");
 
-		}elsif($curr_message =~ /^Sended:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Text:(.*)$/){
-
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$3' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
-
 		}elsif($curr_message =~ /^State:(.*)$/){
 
 			$hash->{STATE} = "$1";
@@ -539,8 +535,7 @@ sub SiSi_startMessageDaemon($){
 										}
 										next;
 						};
-
-						syswrite($hash->{FH},"Sended:Recipients:$1,Attachments:$2,Text:$logText\n");
+						syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
 
 					}else{
 						next;
