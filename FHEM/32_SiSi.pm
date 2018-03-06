@@ -284,10 +284,7 @@ sub SiSi_Attr(@) {
 					my $hash = $defs{$name};
 					if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
-
-						RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
-						$attrChanged = 1;
-						InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+						syswrite($hash->{FH},"Attr:Timeout,$attr_value");
 
 					}
 
@@ -320,9 +317,8 @@ sub SiSi_Attr(@) {
 			my $hash = $defs{$name};
 			if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 
-				RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
-				$attrChanged = 1;
-				InternalTimer(gettimeofday() + 5,"SiSi_MessageDaemonWatchdog",$hash);
+				syswrite($hash->{FH},"Attr:Timeout,60");
+
 			}
 
 		}
@@ -536,6 +532,10 @@ sub SiSi_startMessageDaemon($){
 										next;
 						};
 						syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
+					}elsif($curr_message =~ /^Attr:Timeout,([0-9]+)$/){
+
+						syswrite($hash->{FH},"Log:5,$hash->{TYPE} $hash->{NAME} - Setting DBus Timeout to " . $1 . "s.\n");
+						$hash->{DBUS}->{BUS}->timeout($1 * 1000);
 
 					}else{
 						next;
