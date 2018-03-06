@@ -155,7 +155,7 @@ sub SiSi_Set($$$) {
 			 #Substitute \n with the \x1A "substitute" character
 			 $text =~ s/\\n/\x1A/g;
 
-			 syswrite($hash->{FH},"Send:Recipients:$recipient,Attachments:$attachment,Text:$text\n");
+			 syswrite($hash->{FH},"Send:$recipient\x1F$attachment\x1F$text\n");
 
 			 return;
 
@@ -193,7 +193,7 @@ sub SiSi_Read($){
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:Timestamp:([0-9]+),Sender:(\+{1}[0-9]+),GroupID:([0-9]+|NONE),Attachment:(\/.*\/attachments\/[0-9]+|NONE),Text:(.*)$/){
+		if($curr_message =~ /^Received:([0-9]+)\x1F(\+{1}[0-9]+)\x1F([0-9]+|NONE)\x1F(\/.*\/attachments\/[0-9]+|NONE)\x1F(.*)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
@@ -387,7 +387,7 @@ sub SiSi_startMessageDaemon($){
 			$text =~ s/\n/\x1A/g;
 
 			#Send the received data to the parent
-			print("Received:Timestamp:$timestamp,Sender:$sender,GroupID:$groupId->[0],Attachment:$attachment->[0],Text:$text\n");
+			print("Received:$timestamp\x1F$sender\x1F$groupId->[0]\x1F$attachment->[0]\x1F$text\n");
 
 		};
 
@@ -498,7 +498,7 @@ sub SiSi_startMessageDaemon($){
 				while(@messages){
 					$curr_message = shift(@messages);
 
-					if($curr_message =~ /^Send:Recipients:(\+{1}[0-9]+.*),Attachments:(\/.+|NONE),Text:(.*)$/){
+					if($curr_message =~ /^Send:(\+{1}[0-9]+.*)\x1F(\/.+|NONE)\x1F(.*)$/){
 
 						my @attachment = ();
 						my @recipients = split(/,/,$1);
