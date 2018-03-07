@@ -45,12 +45,14 @@ Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei we
 * msgText: Für den Text der letzten empfangenen Nachricht.
 * msgSender: Für den Sender der letzten Nachricht.
 * msgGroupId: Für die GruppenId in der die letzte Nachricht verfasst wurde.
+* msgGroupName: Für den Namen der Gruppe in der die letzte Nachricht verfasst wurde.
 * msgTimestamp: Für den Zeitstempel, bei der die letzte Nachricht abgesendet wurde.
 * msgAttachment: Für den Anhang der letzten Nachricht.
 
 * prevMsgText: Für die vorherig empfangene Nachricht.
 * prevMsgSender: Für den Sender der vorherigen Nachricht.
 * prevMsgGroupId: Für die GruppenId in der die vorherige Nachricht verfasst wurde.
+* prevMsgGroupName: Für den Namen der Gruppe in der die vorherige Nachricht verfasst wurde.
 * prevMsgTimestamp: Für den Zeitstempel, bei der die vorherige Nachricht abgesendet wurde.
 * prevMsgAttachment: Für den Anhang der vorherigen Nachricht.
 

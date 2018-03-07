@@ -200,13 +200,14 @@ sub SiSi_Read($){
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:([0-9]+)\x1F(\+{1}[0-9]+)\x1F(.*)\x1F(\/.*\/attachments\/[0-9]+|NONE)\x1F(.*)$/){
+		if($curr_message =~ /^Received:([0-9]+)\x1F(\+{1}[0-9]+)\x1F(.*)\x1F(.*)\x1F(\/.*\/attachments\/[0-9]+|NONE)\x1F(.*)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
 			my $groupId = $3;
-			my $attachment = $4;
-			my $text = $5;
+			my $groupName = $4;
+			my $attachment = $5;
+			my $text = $6;
 			my $logText = "";
 
 			$logText = $text;
@@ -217,6 +218,7 @@ sub SiSi_Read($){
 			readingsBulkUpdate($hash, "prevMsgTimestamp", ReadingsVal($hash->{NAME}, "msgTimestamp", undef)) if defined ReadingsVal($hash->{NAME}, "msgTimestamp", undef);
 			readingsBulkUpdate($hash, "prevMsgText", ReadingsVal($hash->{NAME}, "msgText", undef)) if defined ReadingsVal($hash->{NAME}, "msgText", undef);
 			readingsBulkUpdate($hash, "prevMsgSender", ReadingsVal($hash->{NAME}, "msgSender", undef)) if defined ReadingsVal($hash->{NAME}, "msgSender", undef);
+			readingsBulkUpdate($hash, "prevMsgGroupName", ReadingsVal($hash->{NAME}, "msgGroupName", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupName", undef);
 			readingsBulkUpdate($hash, "prevMsgGroupId", ReadingsVal($hash->{NAME}, "msgGroupId", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupId", undef);
 			readingsBulkUpdate($hash, "prevMsgAttachment", ReadingsVal($hash->{NAME}, "msgAttachment", undef)) if defined ReadingsVal($hash->{NAME}, "msgAttachment", undef);
 			readingsEndUpdate($hash, 0);
@@ -225,13 +227,14 @@ sub SiSi_Read($){
 			readingsBulkUpdate($hash, "msgTimestamp", $timestamp);
 			readingsBulkUpdate($hash, "msgText", $text);
 			readingsBulkUpdate($hash, "msgSender", $sender);
+			readingsBulkUpdate($hash, "msgGroupName", $groupName);
 			readingsBulkUpdate($hash, "msgGroupId", $groupId);
 			readingsBulkUpdate($hash, "msgAttachment", $attachment);
 			readingsEndUpdate($hash, 1);
 
 			$logText =~ s/\x1A/\x20/g;
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupId' and attachment: '$attachment'");
+			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupName ($groupId)' and attachment: '$attachment'");
 
 		}elsif($curr_message =~ /^State:(.*)$/){
 
@@ -385,15 +388,15 @@ sub SiSi_startMessageDaemon($){
 
 			my ($timestamp,$sender,$groupId,$text,$attachment) = @_;
 
-			my $groupIdEnc;
+			my $groupIdEnc = "NONE";
+			my $groupName = "NONE";
 
 			print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - A new message was received on DBus-signal 'MessageReceived'.\n");
 
 			#Encode GroupId in Base64
 			if(@$groupId > 0){
 				$groupIdEnc = encode_base64((join '', map chr, @$groupId),"");
-			}else{
-				$groupIdEnc = "NONE";
+				$groupName = $child_hash->{DBUS}->{OBJECT}->getGroupName($groupId);
 			}
 
 			$attachment->[0] = "NONE" unless $attachment->[0];
@@ -402,7 +405,7 @@ sub SiSi_startMessageDaemon($){
 			$text =~ s/\n/\x1A/g;
 
 			#Send the received data to the parent
-			print("Received:$timestamp\x1F$sender\x1F$groupIdEnc\x1F$attachment->[0]\x1F$text\n");
+			print("Received:$timestamp\x1F$sender\x1F$groupIdEnc\x1F$groupName\x1F$attachment->[0]\x1F$text\n");
 
 		};
 
