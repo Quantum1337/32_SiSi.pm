@@ -236,6 +236,34 @@ sub SiSi_Read($){
 
 			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupName ($groupId)' and attachment: '$attachment'");
 
+		}elsif($curr_message =~ /^Sent:(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)$/){
+
+			my $result = $1;
+			my $recipient = $2;
+			my $groupId = $3;
+			my $groupName = $4;
+			my $attachment = $5;
+			my $text = $6;
+			my $errorText = $7;
+
+			delete $hash->{sentMsgResult} if(defined $hash->{sentMsgResult});
+			delete $hash->{sentMsgRecipient} if(defined $hash->{sentMsgRecipient});
+			delete $hash->{sentMsgGroupId} if(defined $hash->{sentMsgGroupId});
+			delete $hash->{sentMsgGroupName} if(defined $hash->{sentMsgGroupName});
+			delete $hash->{sentMsgAttachment} if(defined $hash->{sentMsgAttachment});
+			delete $hash->{sentMsgText} if(defined $hash->{sentMsgText});
+			delete $hash->{sentMsgError} if(defined $hash->{sentMsgError});
+
+
+			$hash->{sentMsgResult} = $result;
+			$hash->{sentMsgRecipient} = $recipient if($recipient);
+			$hash->{sentMsgGroupId} = $groupId if($groupId);
+			$hash->{sentMsgGroupName} = $groupName if($groupName);
+			$hash->{sentMsgAttachment} = $attachment if($attachment);
+			$hash->{sentMsgText} = $text if($text);
+			$hash->{sentMsgError} = $errorText if($errorText);
+
+
 		}elsif($curr_message =~ /^State:(.*)$/){
 
 			$hash->{STATE} = "$1";
@@ -523,6 +551,8 @@ sub SiSi_startMessageDaemon($){
 						my $text = "";
 						my $logText = "";
 						my $GroupIdEnc = "";
+						my @groupId = "";
+						my $groupName = "";
 
 						@recipients = split(/,/,$1) if(defined $1);
 						$GroupIdEnc = $2 if(defined $2);
@@ -542,37 +572,47 @@ sub SiSi_startMessageDaemon($){
 							eval{
 								$hash->{DBUS}->{OBJECT}->sendMessage($text,\@attachment,\@recipients); 1
 							} or do{
+											my $errorText = "";
 											if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1.\n");
+												$errorText = $1;
 											}elsif($@ =~ /^org\.freedesktop\.dbus\.exceptions\.DBusExecutionException: (.+)$/){
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1 - Maybe wrong Number?\n");
+												$errorText = $1 . " - Maybe wrong Number?"
 											}else{
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $@\n");
+												$errorText = $@;
 											}
+											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $errorText\n");
+											syswrite($hash->{FH},"Sent:FAILED\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$text\x1F$errorText\n");
 											next;
 										};
-							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sent to recipient\(s\): '$1'");
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '".join(",",@attachment)."' was sent to recipient\(s\): '".join(",",@recipients)."'\n");
 						}else{
 
 							my @chars = split //, decode_base64($GroupIdEnc);
-							my @groupId = map ord, @chars;
+							@groupId = map ord, @chars;
 
 							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send group message to DBus method 'sendGroupMessage' on service $hash->{SERVICE}\n");
 
 							eval{
 								$hash->{DBUS}->{OBJECT}->sendGroupMessage($text,\@attachment,\@groupId); 1
 							} or do{
+											my $errorText = "";
 											if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $1.\n");
+												$errorText = $1;
 											}elsif($@ =~ /^org.asamk.signal.GroupNotFoundException: (.+)$/){
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $1.\n");
+												$errorText = $1;
 											}else{
-												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $@\n");
+												$errorText = $@;
 											}
+											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $errorText.\n");
+											syswrite($hash->{FH},"Sent:FAILED\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$text\x1F$errorText\n");
 											next;
 										};
-							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sent to group: '$GroupIdEnc'");
+							$groupName = $child_hash->{DBUS}->{OBJECT}->getGroupName(\@groupId);
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '".join(",",@attachment)."' was sent to group: '$GroupIdEnc'\n");
 						}
+
+						syswrite($hash->{FH},"Sent:SUCCESS\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$text\x1F\n");
+
 					}elsif($curr_message =~ /^Attr:Timeout,([0-9]+)$/){
 
 						syswrite($hash->{FH},"Log:5,$hash->{TYPE} $hash->{NAME} - Setting DBus Timeout to " . $1 . "s.\n");
