@@ -6,6 +6,7 @@ eval "use Net::DBus;1" or my $NETDBus = "Net::DBus";
 eval "use Net::DBus::Reactor;1" or my $NETDBusReactor = "Net::DBus::Reactor";
 eval "use Net::DBus::Callback;1" or my $NETDBusCallback = "Net::DBus::Callback";
 use Socket;
+use MIME::Base64;
 use POSIX ":sys_wait_h";
 
 my %SiSi_sets = (
@@ -112,30 +113,37 @@ sub SiSi_Set($$$) {
 
 	}elsif(($a->[1] eq "message") || ($a->[1] eq "msg") || ($a->[1] eq "_msg") || ($a->[1] eq "send") ){
 
-		 my $attachment = "NONE";
-		 my $text = "";
-		 my $recipient = "";
-
 		 if(!&SiSi_MessageDaemonRunning($hash)){
 
 			 return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
 
 		 }elsif(!defined $h->{m} || $h->{m} eq ""){
 
-			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a=\"PATH1,PATH2,PATHN\"]"
+			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" [g=GroupId] [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a=\"PATH1,PATH2,PATHN\"]"
 
-		 }elsif(!defined $h->{r} && !defined AttrVal($hash->{NAME},"defaultRecipient",undef)){
+		 }elsif(!defined $h->{r} && !defined $h->{g} && !defined AttrVal($hash->{NAME},"defaultRecipient",undef)){
 
-			 return "Specify a RECIPIENT with r=RECIPIENT or set attr $hash->{NAME} defaultRecipient RECIPIENT"
+			 return "Specify a RECIPIENT with r=RECIPIENT, a GroupId with g=GroupId or set attr $hash->{NAME} defaultRecipient RECIPIENT"
 
 		 }else{
 
-			 if(defined $h->{r}){
-				 if($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
-					 return "RECIPIENT must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
+			 my $attachment = "NONE";
+			 my $text = "";
+			 my $recipient = "";
+			 my $groupIdEnc = "";
+
+			 if(defined $h->{g}){
+				 if($h->{g} !~ /^.*\=$/){
+				 	return "GroupId is not a valid base64 encoded string"
 				 }else{
-				 	 $recipient = $h->{r};
-			 	 }
+					 $groupIdEnc = $h->{g};
+				 }
+			 }elsif(defined $h->{r}){
+				 if($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
+					 return "RECIPIENT is not valid. Note that you have to specify the country code e.g. +49XXX for germany"
+				 }else{
+					 $recipient = $h->{r};
+				 }
 			 }else{
 				 $recipient = AttrVal($hash->{NAME},"defaultRecipient",undef);
 			 }
@@ -154,8 +162,7 @@ sub SiSi_Set($$$) {
 
 			 #Substitute \n with the \x1A "substitute" character
 			 $text =~ s/\\n/\x1A/g;
-
-			 syswrite($hash->{FH},"Send:$recipient\x1F$attachment\x1F$text\n");
+			 syswrite($hash->{FH},"Send:$recipient\x1F$groupIdEnc\x1F$attachment\x1F$text\n");
 
 			 return;
 
@@ -188,12 +195,12 @@ sub SiSi_Read($){
 		return;
 	}
 
-	@messages = split(/\x00|\n/,$buffer);
+	@messages = split(/\n/,$buffer);
 
 	while(@messages){
 		$curr_message = shift(@messages);
 
-		if($curr_message =~ /^Received:([0-9]+)\x1F(\+{1}[0-9]+)\x1F([0-9]+|NONE)\x1F(\/.*\/attachments\/[0-9]+|NONE)\x1F(.*)$/){
+		if($curr_message =~ /^Received:([0-9]+)\x1F(\+{1}[0-9]+)\x1F(.*)\x1F(\/.*\/attachments\/[0-9]+|NONE)\x1F(.*)$/){
 
 			my $timestamp = $1;
 			my $sender = $2;
@@ -378,16 +385,24 @@ sub SiSi_startMessageDaemon($){
 
 			my ($timestamp,$sender,$groupId,$text,$attachment) = @_;
 
+			my $groupIdEnc;
+
 			print("Log:4,$child_hash->{TYPE} $child_hash->{NAME} - A new message was received on DBus-signal 'MessageReceived'.\n");
 
-			$groupId->[0] = "NONE" unless $groupId->[0];
+			#Encode GroupId in Base64
+			if(@$groupId > 0){
+				$groupIdEnc = encode_base64((join '', map chr, @$groupId),"");
+			}else{
+				$groupIdEnc = "NONE";
+			}
+
 			$attachment->[0] = "NONE" unless $attachment->[0];
 
 			#Substitute \n with the \x1A "substitute" character
 			$text =~ s/\n/\x1A/g;
 
 			#Send the received data to the parent
-			print("Received:$timestamp\x1F$sender\x1F$groupId->[0]\x1F$attachment->[0]\x1F$text\n");
+			print("Received:$timestamp\x1F$sender\x1F$groupIdEnc\x1F$attachment->[0]\x1F$text\n");
 
 		};
 
@@ -498,40 +513,62 @@ sub SiSi_startMessageDaemon($){
 				while(@messages){
 					$curr_message = shift(@messages);
 
-					if($curr_message =~ /^Send:(\+{1}[0-9]+.*)\x1F(\/.+|NONE)\x1F(.*)$/){
+					if($curr_message =~ /^Send:(.*)\x1F(.*)\x1F(\/.+|NONE)\x1F(.*)$/){
 
 						my @attachment = ();
-						my @recipients = split(/,/,$1);
+						my @recipients = "";
 						my $text = "";
 						my $logText = "";
+						my $GroupIdEnc = "";
 
-						if($2 ne "NONE"){
-							@attachment = split(/,/,$2);
-						}
+						@recipients = split(/,/,$1) if(defined $1);
+						$GroupIdEnc = $2 if(defined $2);
+						@attachment = split(/,/,$3) if($3 ne "NONE");
 
-						if(defined $3){
-							$text = $3;
-							$logText = $3;
+						if(defined $4){
+							$text = $4;
+							$logText = $4;
 
 							$text =~ s/\x1A/\n/g;
 							$logText =~ s/\x1A/\x20/g;
 						}
 
-						syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $hash->{SERVICE}\n");
+						if(!$GroupIdEnc){
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send message to DBus method 'sendMessage' on service $hash->{SERVICE}\n");
 
-						eval{
-							$hash->{DBUS}->{OBJECT}->sendMessage($text,\@attachment,\@recipients); 1
-						} or do{
-										if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
-											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1.\n");
-										}elsif($@ =~ /^org\.freedesktop\.dbus\.exceptions\.DBusExecutionException: (.+)$/){
-											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1 - Maybe wrong Number?\n");
-										}else{
-											syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $@\n");
-										}
-										next;
-						};
-						syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$2' was sended to recipient\(s\): '$1'");
+							eval{
+								$hash->{DBUS}->{OBJECT}->sendMessage($text,\@attachment,\@recipients); 1
+							} or do{
+											if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1.\n");
+											}elsif($@ =~ /^org\.freedesktop\.dbus\.exceptions\.DBusExecutionException: (.+)$/){
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $1 - Maybe wrong Number?\n");
+											}else{
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send message: $@\n");
+											}
+											next;
+										};
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sended to recipient\(s\): '$1'");
+						}else{
+
+							my @chars = split //, decode_base64($2);
+							my @groupId = map ord, @chars;
+
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send group message to DBus method 'sendGroupMessage' on service $hash->{SERVICE}\n");
+
+							eval{
+								$hash->{DBUS}->{OBJECT}->sendGroupMessage($text,\@attachment,\@groupId); 1
+							} or do{
+											if($@ =~ /^org\.asamk\.signal\.AttachmentInvalidException:.*: (.+)$/){
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $1.\n");
+											}elsif($@ =~ /^org.asamk.signal.GroupNotFoundException: (.+)$/){
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $1.\n");
+											}else{
+												syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Failed to send group message: $@\n");
+											}
+											next;
+										};
+						}
 					}elsif($curr_message =~ /^Attr:Timeout,([0-9]+)$/){
 
 						syswrite($hash->{FH},"Log:5,$hash->{TYPE} $hash->{NAME} - Setting DBus Timeout to " . $1 . "s.\n");

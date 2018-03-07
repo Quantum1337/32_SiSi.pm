@@ -52,18 +52,19 @@ Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei we
 * prevMsgSender: Für den Sender der vorherigen Nachricht.
 * prevMsgGroupId: Für die GruppenId in der die vorherige Nachricht verfasst wurde.
 * prevMsgTimestamp: Für den Zeitstempel, bei der die vorherige Nachricht abgesendet wurde.
+* prevMsgAttachment: Für den Anhang der vorherigen Nachricht.
 
 Beim update der *prev* Readings werden keine Events getriggert!
 
 ### Senden einer Nachricht
 
-Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anhängen gesendet werden. Das Senden von Gruppennachrichten wird noch nicht unterstützt.
+Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anhängen gesendet werden.
 
 Eine Nachricht kann mittels der Set-Kommandos send,msg,\_msg,message gesendet werden. Dieses wird wie folgt angesprochen:
 
-`Usage: set <NAME> send|msg|_msg|message m="MESSAGE" [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
+`Usage: set <NAME> send|msg|_msg|message m="MESSAGE" [g=GroupId] [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
 
-Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer.
+Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer. Die GroupId muss ein Base64 encodierter string sein. Ist GroupId und RECIPIENT definiert (includiert auch das attr defaultRecipient). So wird der GroupId vorrang gegeben.
 
 ### Reconnect
 
