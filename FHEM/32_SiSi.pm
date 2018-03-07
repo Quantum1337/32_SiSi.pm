@@ -548,10 +548,10 @@ sub SiSi_startMessageDaemon($){
 											}
 											next;
 										};
-							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sended to recipient\(s\): '$1'");
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sent to recipient\(s\): '$1'");
 						}else{
 
-							my @chars = split //, decode_base64($2);
+							my @chars = split //, decode_base64($GroupIdEnc);
 							my @groupId = map ord, @chars;
 
 							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - Trying to send group message to DBus method 'sendGroupMessage' on service $hash->{SERVICE}\n");
@@ -568,6 +568,7 @@ sub SiSi_startMessageDaemon($){
 											}
 											next;
 										};
+							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '$3' was sent to group: '$GroupIdEnc'");
 						}
 					}elsif($curr_message =~ /^Attr:Timeout,([0-9]+)$/){
 
