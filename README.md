@@ -66,7 +66,7 @@ Eine Nachricht kann mittels der Set-Kommandos send,msg,\_msg,message gesendet we
 
 `Usage: set <NAME> send|msg|_msg|message [@<Recipient1> ... @<RecipientN>] [@#<GroupId1> ... @#<GroupIdN>] [&<Attachment1> ... &<AttachmentN>] [<Text>]`
 
-<Recipient>, <GroupId> und/oder <Attachment> müssen vor <Text> definiert werden. Die Reihenfolge untereinander spielt keine Rolle. Für eine gültige Nachricht muss entweder <Attachment> oder <Text> definiert sein. Ist weder <Recipient> noch <GroupId> gesetzt wird das attribut defaultRecipient gelesen.
+\<Recipient\>, \<GroupId\> und/oder \<Attachment\> müssen vor \<Text\> definiert werden. Die Reihenfolge untereinander spielt keine Rolle. Für eine gültige Nachricht muss entweder \<Attachment\> oder \<Text\> definiert sein. Ist weder \<Recipient\> noch \<GroupId\> gesetzt wird das attribut defaultRecipient gelesen.
 
 Bsp: set Signal send @+491234567 @#abcdefgh12345== &/PFAD/ZUR/DATEI Beispielnachricht
 Dieser Befehl sendet an den Empfänger +491234567 und an die Gruppe mit der Id abcdefgh12345== eine Nachricht, die den Anhang DATEI und den Text "Beispielnachricht" enthält.
