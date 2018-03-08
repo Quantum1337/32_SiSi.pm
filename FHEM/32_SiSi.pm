@@ -1,4 +1,5 @@
 package main;
+
 use strict;
 use warnings;
 
@@ -37,13 +38,13 @@ sub SiSi_Initialize($) {
 					"defaultRecipient " .
           $readingFnAttributes;
 
-    $hash->{parseParams} = 1;
+    #$hash->{parseParams} = 1;
 }
 
 my $attrChanged = 0;
 
 sub SiSi_Define($$$) {
-	my ($hash, $a, $h) = @_;
+	my ($hash, $def) = @_;
 
 	return "Error while loading $NETDBus. Please install $NETDBus" if $NETDBus;
 	return "Error while loading $NETDBusReactor. Please install $NETDBusReactor" if $NETDBusReactor;
@@ -99,9 +100,9 @@ sub SiSi_Shutdown($){
 }
 
 sub SiSi_Set($$$) {
-	my ($hash, $a, $h) = @_;
+	my ($hash, $name, $opt, @args) = @_;
 
-	if($a->[1] eq "reconnect"){
+	if($opt eq "reconnect"){
 
 				if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
 					RemoveInternalTimer($hash,"SiSi_MessageDaemonWatchdog");
@@ -111,66 +112,52 @@ sub SiSi_Set($$$) {
 					return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
 				}
 
-	}elsif(($a->[1] eq "message") || ($a->[1] eq "msg") || ($a->[1] eq "_msg") || ($a->[1] eq "send") ){
+	}elsif(($opt eq "message") || ($opt eq "msg") || ($opt eq "_msg") || ($opt eq "send") ){
 
-		 if(!&SiSi_MessageDaemonRunning($hash)){
+		return "Usage: set $hash->{NAME} send|msg|_msg|message [@<Recipient1> ... @<RecipientN>] [@#<GroupId1> ... @#<GroupIdN>] [&<Attachment1> ... &<AttachmentN>] [<Text>]" if (int(@args) == 0); # Only Attachment ??
+		return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'" if(!&SiSi_MessageDaemonRunning($hash));
 
-			 return "Enable $hash->{NAME} first. Type 'attr $hash->{NAME} enable yes'"
+		my @recipients = ();
+		my @groupIdsEnc = ();
+		my @attachments = ();
+		my $text = "";
 
-		 }elsif(!defined $h->{m} || $h->{m} eq ""){
+		while(my $curr_arg = shift @args){
 
-			 return "Usage: set $hash->{NAME} $a->[1] m=\"MESSAGE\" [g=GroupId] [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a=\"PATH1,PATH2,PATHN\"]"
+			if($curr_arg =~ /^\@([^\#].*)$/){
+				push(@recipients,$1);
+			}elsif($curr_arg =~ /^\@\#(.*)$/){
+				push(@groupIdsEnc,$1);
+			}elsif($curr_arg =~ /^\&(.*)$/){
+				push(@attachments,$1);
+			}else{
+				unshift(@args,$curr_arg);
+				last;
+			}
 
-		 }elsif(!defined $h->{r} && !defined $h->{g} && !defined AttrVal($hash->{NAME},"defaultRecipient",undef)){
+		}
+		return "Not enough arguments. Specify a Recipient, a GroupId or set the defaultRecipient attribute" if(((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)) && (!defined AttrVal($hash->{NAME},"defaultRecipient",undef)));
+		push(@recipients,AttrVal($hash->{NAME},"defaultRecipient",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (defined AttrVal($hash->{NAME},"defaultRecipient",undef)));
+		#push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultRecipient",undef)) if((int(@recipients == 0)) && (AttrVal($hash->{NAME},"defaultRecipient",undef) =~ /^.*\=$/));
 
-			 return "Specify a RECIPIENT with r=RECIPIENT, a GroupId with g=GroupId or set attr $hash->{NAME} defaultRecipient RECIPIENT"
+		return "A Recipient is not valid. Note that you have to specify the country code e.g. +49... for germany" if(join(",",@recipients) !~ /^(\+{1}[0-9]+)*(,\+{1}[0-9]+)*$/);
+		return "Specify either a message text or an attachment" if((int(@attachments) == 0) && (int(@args) == 0));
 
-		 }else{
+		$text = join(" ", @args);
 
-			 my $attachment = "NONE";
-			 my $text = "";
-			 my $recipient = "";
-			 my $groupIdEnc = "";
+		#Substitute \n with the \x1A "substitute" character
+		$text =~ s/\\n/\x1A/g;
+		while(my $curr_recipient = shift @recipients){
+			syswrite($hash->{FH},"Send:$curr_recipient\x1F\x1F".join(",",@attachments)."\x1F$text\n");
+		}
 
-			 if(defined $h->{g}){
-				 if($h->{g} !~ /^.*\=$/){
-				 	return "GroupId is not a valid base64 encoded string"
-				 }else{
-					 $groupIdEnc = $h->{g};
-				 }
-			 }elsif(defined $h->{r}){
-				 if($h->{r} !~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/){
-					 return "RECIPIENT is not valid. Note that you have to specify the country code e.g. +49XXX for germany"
-				 }else{
-					 $recipient = $h->{r};
-				 }
-			 }else{
-				 $recipient = AttrVal($hash->{NAME},"defaultRecipient",undef);
-			 }
-
-			 if(defined $h->{m}){
-				 $text = $h->{m};
-			 }
-
-			 if(defined $h->{a}){
-				 if($h->{a} =~ /^\/.+$/){
-				 	$attachment = $h->{a};
-				 }else{
-					return "PATH has to be absolute. Beginning at root /"
-				 }
-			 }
-
-			 #Substitute \n with the \x1A "substitute" character
-			 $text =~ s/\\n/\x1A/g;
-			 syswrite($hash->{FH},"Send:$recipient\x1F$groupIdEnc\x1F$attachment\x1F$text\n");
-
-			 return;
-
-		 }
+		while(my $curr_groupIdEnc = shift @groupIdsEnc){
+			syswrite($hash->{FH},"Send:\x1F$curr_groupIdEnc\x1F".join(",",@attachments)."\x1F$text\n");
+		}
 
 	}else{
 		my @cList = keys %SiSi_sets;
-		return "Unknown command $a->[1], choose one of " . join(" ", @cList);
+		return "Unknown command $opt, choose one of " . join(" ", @cList);
 	}
 
 }
@@ -320,7 +307,7 @@ sub SiSi_Attr(@) {
 				if($attr_value =~ /^[0-9]+$/ && ($attr_value >= 60 && $attr_value <= 500)) {
 
 					my $hash = $defs{$name};
-					if(AttrVal($hash->{NAME},"enable","no") eq "yes"){
+					if((AttrVal($hash->{NAME},"enable","no")) eq "yes" && ($hash->{STATE} eq "Connected")){
 
 						syswrite($hash->{FH},"Attr:Timeout,$attr_value");
 
@@ -544,7 +531,7 @@ sub SiSi_startMessageDaemon($){
 				while(@messages){
 					$curr_message = shift(@messages);
 
-					if($curr_message =~ /^Send:(.*)\x1F(.*)\x1F(\/.+|NONE)\x1F(.*)$/){
+					if($curr_message =~ /^Send:(.*)\x1F(.*)\x1F(.*)\x1F(.*)$/){
 
 						my @attachment = ();
 						my @recipients = "";
@@ -556,7 +543,7 @@ sub SiSi_startMessageDaemon($){
 
 						@recipients = split(/,/,$1) if(defined $1);
 						$GroupIdEnc = $2 if(defined $2);
-						@attachment = split(/,/,$3) if($3 ne "NONE");
+						@attachment = split(/,/,$3) if(defined $3);
 
 						if(defined $4){
 							$text = $4;
@@ -607,7 +594,7 @@ sub SiSi_startMessageDaemon($){
 											syswrite($hash->{FH},"Sent:FAILED\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$text\x1F$errorText\n");
 											next;
 										};
-							$groupName = $child_hash->{DBUS}->{OBJECT}->getGroupName(\@groupId);
+							$groupName = $hash->{DBUS}->{OBJECT}->getGroupName(\@groupId);
 							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '".join(",",@attachment)."' was sent to group: '$GroupIdEnc'\n");
 						}
 

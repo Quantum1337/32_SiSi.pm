@@ -60,13 +60,20 @@ Beim update der *prev* Readings werden keine Events getriggert!
 
 ### Senden einer Nachricht
 
-Es können Nachrichten an einen oder mehrere Empfänger wahlweise mit Anhang/Anhängen gesendet werden.
+Es können Nachrichten an einen oder mehrere Empfänger/Gruppen wahlweise mit Anhang/Anhängen und/oder einem Text gesendet werden.
 
 Eine Nachricht kann mittels der Set-Kommandos send,msg,\_msg,message gesendet werden. Dieses wird wie folgt angesprochen:
 
-`Usage: set <NAME> send|msg|_msg|message m="MESSAGE" [g=GroupId] [r=RECIPIENT1,RECIPIENT2,RECIPIENTN] [a="PATH1,PATH2,PATHN"]`
+`Usage: set <NAME> send|msg|_msg|message [@<Recipient1> ... @<RecipientN>] [@#<GroupId1> ... @#<GroupIdN>] [&<Attachment1> ... &<AttachmentN>] [<Text>]`
 
-Die Nummer des Empfängers muss dabei mit Ländervorwahl sein. Also +49XXXX für eine deutsche Nummer. Die GroupId muss ein Base64 encodierter string sein. Ist GroupId und RECIPIENT definiert (includiert auch das attr defaultRecipient). So wird der GroupId vorrang gegeben.
+<Recipient>, <GroupId> und/oder <Attachment> müssen vor <Text> definiert werden. Die Reihenfolge untereinander spielt keine Rolle. Für eine gültige Nachricht muss entweder <Attachment> oder <Text> definiert sein. Ist weder <Recipient> noch <GroupId> gesetzt wird das attribut defaultRecipient gelesen.
+
+Bsp: set Signal send @+491234567 @#abcdefgh12345== &/PFAD/ZUR/DATEI Beispielnachricht
+Dieser Befehl sendet an den Empfänger +491234567 und an die Gruppe mit der Id abcdefgh12345== eine Nachricht, die den Anhang DATEI und den Text "Beispielnachricht" enthält.
+
+#### Anmerkung
+
+Sollte der gesendete Anhang (bsp. jpeg-Bild) nicht direkt im Chatverlauf angezeigt werden, sondern nur durch einen zusätzlichen Tap auf ein Datei-Icon. So muss das Paket **shared-mime-info** installiert werden, damit signal-cli die MIME Informationen setzen kann.
 
 ### Reconnect
 
