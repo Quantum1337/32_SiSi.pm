@@ -598,7 +598,7 @@ sub SiSi_startMessageDaemon($){
 							syswrite($hash->{FH},"Log:3,$hash->{TYPE} $hash->{NAME} - The message: '$logText' with attachment\(s\): '".join(",",@attachment)."' was sent to group: '$GroupIdEnc'\n");
 						}
 
-						syswrite($hash->{FH},"Sent:SUCCESS\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$text\x1F\n");
+						syswrite($hash->{FH},"Sent:SUCCESS\x1F".join(",",@recipients)."\x1F$GroupIdEnc\x1F$groupName\x1F".join(",",@attachment)."\x1F$logText\x1F\n");
 
 					}elsif($curr_message =~ /^Attr:Timeout,([0-9]+)$/){
 
