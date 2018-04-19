@@ -146,7 +146,7 @@ sub SiSi_Set($$$) {
 		$text = join(" ", @args);
 
 		#Substitute \n with the \x1A "substitute" character
-		$text =~ s/\\n/\x1A/g;
+		$text =~ s/\n/\x1A/g;
 		while(my $curr_recipient = shift @recipients){
 			syswrite($hash->{FH},"Send:$curr_recipient\x1F\x1F".join(",",@attachments)."\x1F$text\n");
 		}
