@@ -651,13 +651,13 @@ sub SiSi_restartMessageDaemon($){
 sub SiSi_stopMessageDaemon($){
 	my ($hash) = @_;
 	Log3($hash->{NAME},4,"$hash->{TYPE} $hash->{NAME} - Closing connection to DBus service $hash->{SERVICE}.");
-	if(defined $selectlist{$hash->{NANE}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
+	if(defined $selectlist{$hash->{NAME}} || defined $hash->{FD} || defined $hash->{FH} || defined $hash->{PID}){
 
 		if(defined $hash->{FH}){
 			close($hash->{FH});
 		}
-		if(defined $selectlist{$hash->{NANE}}){
-			delete($selectlist{$hash->{NANE}});
+		if(defined $selectlist{$hash->{NAME}}){
+			delete($selectlist{$hash->{NAME}});
 		}
 		delete($hash->{FD});
 		delete($hash->{FH});
