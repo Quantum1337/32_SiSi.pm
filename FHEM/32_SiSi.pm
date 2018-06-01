@@ -723,3 +723,129 @@ sub SiSi_MessageDaemonWatchdog($){
 }
 
 1;
+
+=pod
+=begin html
+<a name="SiSi"></a>
+<h3>SiSi</h3>
+<ul>
+    <i>SiSi</i> [Si]gnal [Si]cherer Messenger is an encrypted communications application
+		for <a href="https://github.com/signalapp/Signal-Android">Android</a> and
+		<a href="https://github.com/signalapp/Signal-iOS">iOS</a>. Not only the
+		mobile applications, also the <a href="https://github.com/signalapp/Signal-Server">Server</a>
+		is free and open source.<br><br>
+		This module makes use of <a href="https://github.com/AsamK/signal-cli">signal-cli</a>s
+		DBus interface. Make sure signal-cli ist installed and configured properly on your FHEM host system.
+		Look at <a href="https://github.com/AsamK/signal-cli/wiki/DBus-service">this</a>,
+		<a href="https://forum.fhem.de/index.php/topic,84996.0.html">this</a> and
+		<a href="https://github.com/Quantum1337/32_SiSi.pm/blob/master/README.md">that</a>
+		to get further help.
+    <br><br>
+    <a name="SiSidefine"></a>
+    <b>Define</b>
+    <ul>
+        <code>define &lt;name&gt; SiSi</code>
+    </ul>
+    <br>
+    <a name="SiSiset"></a>
+    <b>Set</b><br>
+    <ul>
+        <ul>
+              <li><i>message|msg|_msg|send [@&lt;Recipient1> ... @&lt;RecipientN>] [@#&lt;GroupId1&gt; ... @#&lt;GroupIdN&gt;] [&&lt;Attachment1&gt; ... &&lt;AttachmentN&gt;] [&lt;Text&gt;]</i><br>
+              Sends a message to recipient(s) or group(s). Optional with attachment(s) and/or a text.
+							Recipient(s) have to be given with country code e.g. +49 for germany.
+							Valid GroupId(s) must end with two equal signs (==), because every GroupId is a Base64 encoded 128-Bit value.
+							If neither a recipient nor a group was given, the value in the attribute
+							defaultRecipient will be used.
+							<br><br>
+							Example: set &lt;name&gt; msg @+491234567 Exampletext<br>
+							This command will send a message to the recipient @+491234567 with a text
+							Exampletext
+							<br><br>
+							Example: set &lt;name&gt; send @+491234567 @#abcdefgh12345== &/PATH/TO/FILE Exampletext<br>
+							This command will send a message to the recipient +491234567 and the group abcdefgh12345==
+							with an attachment FILE and the text Exampletext.
+							</li>
+							<li><i>reconnect</i><br>
+							Initiates a reconnect to the siganl-clis DBus service.
+							</li>
+        </ul>
+    </ul>
+    <br>
+    <a name="SiSiattr"></a>
+    <b>Attributes</b>
+    <ul>
+        <ul>
+						<li><i>defaultRecipient</i><br>
+								If neither a recipient nor a group was given with the send commands,
+								the recipient given with this attribute will be used.
+						</li>
+            <li><i>enable [yes|no]</i><br>
+                Set this attribute to yes, to initiate a connection to signal-clis DBus service<br>
+            </li>
+						<li><i>timeout [60s-500s]</i><br>
+                On slower systems, it is possible that the DBus Service will throw reply errors,
+								when sending large attachments. Increase this value, to fix this problem.<br>
+            </li>
+        </ul>
+    </ul>
+		<br>
+    <a name="SiSireadings"></a>
+    <b>Readings</b>
+    <ul>
+        <ul>
+						<li><i>msgText</i><br>
+							Text of the last received message.
+						</li>
+            <li><i>msgSender</i><br>
+							Sender of the last received message.
+            </li>
+						<li><i>msgGroupId</i><br>
+							GroupId of the last received message. If a message was not sent
+							within a group, this reading will have the value NONE.
+            </li>
+						<li><i>msgGroupName</i><br>
+							GroupName of the last received message. If a message was not sent
+							within a group, this reading will have the value NONE.
+            </li>
+						<li><i>msgTimestamp</i><br>
+							Timestamp of the last received message.
+            </li>
+						<li><i>msgAttachment</i><br>
+							Attachment of the last received message. This reading will hold
+							the path, where the received attachment was saved. If a message was
+							not sent with an attachment, this reading will have the value NONE.
+            </li>
+						<br>
+						<br>
+						<li><i>prevMsgText</i><br>
+							Text of the previous received message.
+						</li>
+            <li><i>prevMsgSender</i><br>
+							Sender of the previous received message.
+            </li>
+						<li><i>prevMsgGroupId</i><br>
+							GroupId of the previous received message. If a message was not sent
+							within a group, this reading will have the value NONE.
+            </li>
+						<li><i>prevMsgGroupName</i><br>
+							GroupName of the previous received message. If a message was not sent
+							within a group, this reading will have the value NONE.
+            </li>
+						<li><i>prevMsgTimestamp</i><br>
+							Timestamp of the previous received message.
+            </li>
+						<li><i>prevMsgAttachment</i><br>
+							Attachment of the previous received message. This reading will hold
+							the path, where the received attachment was saved. If a message was
+							not sent with an attachment, this reading will have the value NONE.
+            </li>
+						<br>
+						<br>
+						<li><b>NOTE: All prev... readings are not triggering events!</b><br>
+            </li>
+        </ul>
+    </ul>
+</ul>
+=end html
+=cut

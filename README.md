@@ -5,7 +5,7 @@ Ein FHEM Modul für den quelloffenen Messenger "[Si]gnal - [Si]cherer Messenger"
 
 Das Modul liefert eine FHEM-DBus-Schnittstelle zum Kommandozeileninterface [signal-cli](https://github.com/AsamK/signal-cli) des Messengers [Signal](https://signal.org/). Signal ist ein sicherer, freier und quelloffener Messenger Dienst. Sowohl die [Clienten](https://github.com/signalapp) als auch der [Server](https://github.com/signalapp/Signal-Server) sind für jedermann frei einsehbar. Das Protokoll zur E2E-Verschlüsselung ist ebenfalls frei und quelloffenen.
 
-Bisher nur Unterstützung für Linux!
+Nur Unterstützung für Linux!
 
 # Vorbereitungen
 
@@ -36,58 +36,17 @@ Das Modul in /HOMEPATH/FHEM/ ablegen und entsprechende Berechtigungen setzen. We
 
 Danach in FHEM mittels  `reload 32_SiSi.pm` das Modul einbinden.
 
-# Funktionen
+# Anmerkungen
 
-### Empfangen einer Nachrichten
+## Funktionen
 
-Zu diesem Zeitpunkt können Nachrichten jeglicher Art empfangen werden. Dabei werden folgende Modul readings gesetzt.
+Siehe commandref.
 
-* msgText: Für den Text der letzten empfangenen Nachricht.
-* msgSender: Für den Sender der letzten Nachricht.
-* msgGroupId: Für die GruppenId in der die letzte Nachricht verfasst wurde.
-* msgGroupName: Für den Namen der Gruppe in der die letzte Nachricht verfasst wurde.
-* msgTimestamp: Für den Zeitstempel, bei der die letzte Nachricht abgesendet wurde.
-* msgAttachment: Für den Anhang der letzten Nachricht.
-
-* prevMsgText: Für die vorherig empfangene Nachricht.
-* prevMsgSender: Für den Sender der vorherigen Nachricht.
-* prevMsgGroupId: Für die GruppenId in der die vorherige Nachricht verfasst wurde.
-* prevMsgGroupName: Für den Namen der Gruppe in der die vorherige Nachricht verfasst wurde.
-* prevMsgTimestamp: Für den Zeitstempel, bei der die vorherige Nachricht abgesendet wurde.
-* prevMsgAttachment: Für den Anhang der vorherigen Nachricht.
-
-Beim update der *prev* Readings werden keine Events getriggert!
-
-### Senden einer Nachricht
-
-Es können Nachrichten an einen oder mehrere Empfänger/Gruppen wahlweise mit Anhang/Anhängen und/oder einem Text gesendet werden.
-
-Eine Nachricht kann mittels der Set-Kommandos send,msg,\_msg,message gesendet werden. Dieses wird wie folgt angesprochen:
-
-`Usage: set <NAME> send|msg|_msg|message [@<Recipient1> ... @<RecipientN>] [@#<GroupId1> ... @#<GroupIdN>] [&<Attachment1> ... &<AttachmentN>] [<Text>]`
-
-\<Recipient\>, \<GroupId\> und/oder \<Attachment\> müssen vor \<Text\> definiert werden. Die Reihenfolge untereinander spielt keine Rolle. Für eine gültige Nachricht muss entweder \<Attachment\> oder \<Text\> definiert sein. Ist weder \<Recipient\> noch \<GroupId\> gesetzt wird das attribut defaultRecipient gelesen.
-
-Bsp: set Signal send @+491234567 @#abcdefgh12345== &/PFAD/ZUR/DATEI Beispielnachricht
-Dieser Befehl sendet an den Empfänger +491234567 und an die Gruppe mit der Id abcdefgh12345== eine Nachricht, die den Anhang DATEI und den Text "Beispielnachricht" enthält.
-
-#### Anmerkung
+## MIME
 
 Sollte der gesendete Anhang (bsp. jpeg-Bild) nicht direkt im Chatverlauf angezeigt werden, sondern nur durch einen zusätzlichen Tap auf ein Datei-Icon. So muss das Paket **shared-mime-info** installiert werden, damit signal-cli die MIME Informationen setzen kann.
 
-### Reconnect
-
-Mittels
-`set <NAME> reconnect`
-wird die Verbindung zum DBus-Service neu aufgebaut.
-
-### Attribute
-
-* enable: [yes|no] Wenn *enable* = yes, dann versucht das Modul eine Verbindung zum DBus Service `org.asamk.Signal` aufzubauen. ist die Verbindung erfolgreich wechselt STATE auf *Connected*. Ansonsten in den FileLog schauen!
-* timout: [60-500] Bei langsamen Systemen (RPI1) kann es zu reply-Timeouts kommen, vorallem wenn Nachrichten mit großen Anhängen gesendet werden. Angabe in Sekunden.
-* defaultRecipient: [RECIPIENT1,RECIPIENT2,RECIPIENTN] Wenn r=RECIPIENT1,RECIPIENT2,RECIPIENTN nicht angegeben, wird RECIPIENT1,RECIPIENT2,RECIPIENTN aus diesem Attribut gelesen.
-
-# DBus und systemd Timeouts
+## DBus und systemd Timeouts
 
 Gerade auf langsamen Systemen kann es zu Zeitüberschreitungen während des Starts des Daemons bzw. wärend dem Versenden von Nachrichten mit großen Anhängen kommen. Auf einem RPI1 dauert der Start mitunter 5 Minuten.
 
