@@ -35,7 +35,7 @@ sub SiSi_Initialize($) {
 					"timeout " .
 					"service " .
 					"object " .
-					"defaultRecipient " .
+					"defaultPeer " .
           $readingFnAttributes;
 
     #$hash->{parseParams} = 1;
@@ -136,9 +136,9 @@ sub SiSi_Set($$$) {
 			}
 
 		}
-		return "Not enough arguments. Specify a Recipient, a GroupId or set the defaultRecipient attribute" if(((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)) && (!defined AttrVal($hash->{NAME},"defaultRecipient",undef)));
-		push(@recipients,AttrVal($hash->{NAME},"defaultRecipient",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (defined AttrVal($hash->{NAME},"defaultRecipient",undef)));
-		#push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultRecipient",undef)) if((int(@recipients == 0)) && (AttrVal($hash->{NAME},"defaultRecipient",undef) =~ /^.*\=$/));
+		return "Not enough arguments. Specify a Recipient, a GroupId or set the defaultPeer attribute" if(((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)) && (!defined AttrVal($hash->{NAME},"defaultPeer",undef)));
+		push(@recipients,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^\+{1}[0-9]+$/));
+		push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^.*==$/));
 
 		return "A Recipient is not valid. Note that you have to specify the country code e.g. +49... for germany" if(join(",",@recipients) !~ /^(\+{1}[0-9]+)*(,\+{1}[0-9]+)*$/);
 		return "Specify either a message text or an attachment" if((int(@attachments) == 0) && (int(@args) == 0));
@@ -318,14 +318,14 @@ sub SiSi_Attr(@) {
 					return "Invalid argument $attr_value to $attr_name. Must be nummeric and between 60 and 500"
 
 				}
-			}elsif($attr_name eq "defaultRecipient") {
-				if($attr_value =~ /^\+{1}[0-9]+(,\+{1}[0-9]+)*$/) {
+			}elsif($attr_name eq "defaultPeer") {
+				if($attr_value =~ /^\+{1}[0-9]+$/ || $attr_value =~ /^.*==$/) {
 
 					return undef;
 
 				}else{
 
-					return "Invalid argument $attr_value to $attr_name. Must fullfil the following regex pattern: \+{1}[0-9]+(,\+{1}[0-9]+)*"
+					return "Invalid argument $attr_value to $attr_name. Must be a valid recipient or groupId"
 
 				}
 			}
@@ -756,7 +756,7 @@ sub SiSi_MessageDaemonWatchdog($){
 							Recipient(s) have to be given with country code e.g. +49 for germany.
 							Valid GroupId(s) must end with two equal signs (==), because every GroupId is a Base64 encoded 128-Bit value.
 							If neither a recipient nor a group was given, the value in the attribute
-							defaultRecipient will be used.
+							defaultPeer will be used.
 							<br><br>
 							Example: set &lt;name&gt; msg @+491234567 Exampletext<br>
 							This command will send a message to the recipient @+491234567 with a text
@@ -776,9 +776,9 @@ sub SiSi_MessageDaemonWatchdog($){
     <b>Attributes</b>
     <ul>
         <ul>
-						<li><i>defaultRecipient</i><br>
+						<li><i>defaultPeer</i><br>
 								If neither a recipient nor a group was given with the send commands,
-								the recipient given with this attribute will be used.
+								the recipient or groupId given with this attribute will be used.
 						</li>
             <li><i>enable [yes|no]</i><br>
                 Set this attribute to yes, to initiate a connection to signal-clis DBus service<br>
@@ -801,11 +801,11 @@ sub SiSi_MessageDaemonWatchdog($){
 							Sender of the last received message.
             </li>
 						<li><i>msgGroupId</i><br>
-							GroupId of the last received message. If a message was not sent
+							128-Bit group identifier of the last received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>msgGroupName</i><br>
-							GroupName of the last received message. If a message was not sent
+							Group name of the last received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>msgTimestamp</i><br>
@@ -825,11 +825,11 @@ sub SiSi_MessageDaemonWatchdog($){
 							Sender of the previous received message.
             </li>
 						<li><i>prevMsgGroupId</i><br>
-							GroupId of the previous received message. If a message was not sent
+							128-Bit group identifier of the previous received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>prevMsgGroupName</i><br>
-							GroupName of the previous received message. If a message was not sent
+							Group name of the previous received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>prevMsgTimestamp</i><br>
