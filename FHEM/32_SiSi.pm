@@ -36,6 +36,7 @@ sub SiSi_Initialize($) {
 					"service " .
 					"object " .
 					"defaultPeer " .
+					"allowedPeer " .
           $readingFnAttributes;
 
     #$hash->{parseParams} = 1;
@@ -201,28 +202,36 @@ sub SiSi_Read($){
 			$text =~ s/\x1A/\n/g;
 			$timestamp = strftime("%Y-%m-%d %H:%M:%S",localtime($timestamp/1000));
 
-			readingsBeginUpdate($hash);
-			readingsBulkUpdate($hash, "prevMsgTimestamp", ReadingsVal($hash->{NAME}, "msgTimestamp", undef)) if defined ReadingsVal($hash->{NAME}, "msgTimestamp", undef);
-			readingsBulkUpdate($hash, "prevMsgText", ReadingsVal($hash->{NAME}, "msgText", undef)) if defined ReadingsVal($hash->{NAME}, "msgText", undef);
-			readingsBulkUpdate($hash, "prevMsgSender", ReadingsVal($hash->{NAME}, "msgSender", undef)) if defined ReadingsVal($hash->{NAME}, "msgSender", undef);
-			readingsBulkUpdate($hash, "prevMsgGroupName", ReadingsVal($hash->{NAME}, "msgGroupName", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupName", undef);
-			readingsBulkUpdate($hash, "prevMsgGroupId", ReadingsVal($hash->{NAME}, "msgGroupId", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupId", undef);
-			readingsBulkUpdate($hash, "prevMsgAttachment", ReadingsVal($hash->{NAME}, "msgAttachment", undef)) if defined ReadingsVal($hash->{NAME}, "msgAttachment", undef);
-			readingsEndUpdate($hash, 0);
+			my $allowedPeer = AttrVal($hash->{NAME},"allowedPeer",undef);
+			my $senderRegex = quotemeta($sender);
+			my $groupIdRegex = quotemeta($groupId);
 
-			readingsBeginUpdate($hash);
-			readingsBulkUpdate($hash, "msgTimestamp", $timestamp);
-			readingsBulkUpdate($hash, "msgText", $text);
-			readingsBulkUpdate($hash, "msgSender", $sender);
-			readingsBulkUpdate($hash, "msgGroupName", $groupName);
-			readingsBulkUpdate($hash, "msgGroupId", $groupId);
-			readingsBulkUpdate($hash, "msgAttachment", $attachment);
-			readingsEndUpdate($hash, 1);
+			if(!defined $allowedPeer || $allowedPeer =~ /^.*$senderRegex.*$/ || $allowedPeer =~ /^.*$groupIdRegex.*$/){
 
-			$logText =~ s/\x1A/\x20/g;
+				readingsBeginUpdate($hash);
+				readingsBulkUpdate($hash, "prevMsgTimestamp", ReadingsVal($hash->{NAME}, "msgTimestamp", undef)) if defined ReadingsVal($hash->{NAME}, "msgTimestamp", undef);
+				readingsBulkUpdate($hash, "prevMsgText", ReadingsVal($hash->{NAME}, "msgText", undef)) if defined ReadingsVal($hash->{NAME}, "msgText", undef);
+				readingsBulkUpdate($hash, "prevMsgSender", ReadingsVal($hash->{NAME}, "msgSender", undef)) if defined ReadingsVal($hash->{NAME}, "msgSender", undef);
+				readingsBulkUpdate($hash, "prevMsgGroupName", ReadingsVal($hash->{NAME}, "msgGroupName", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupName", undef);
+				readingsBulkUpdate($hash, "prevMsgGroupId", ReadingsVal($hash->{NAME}, "msgGroupId", undef)) if defined ReadingsVal($hash->{NAME}, "msgGroupId", undef);
+				readingsBulkUpdate($hash, "prevMsgAttachment", ReadingsVal($hash->{NAME}, "msgAttachment", undef)) if defined ReadingsVal($hash->{NAME}, "msgAttachment", undef);
+				readingsEndUpdate($hash, 0);
 
-			Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupName ($groupId)' and attachment: '$attachment'");
+				readingsBeginUpdate($hash);
+				readingsBulkUpdate($hash, "msgTimestamp", $timestamp);
+				readingsBulkUpdate($hash, "msgText", $text);
+				readingsBulkUpdate($hash, "msgSender", $sender);
+				readingsBulkUpdate($hash, "msgGroupName", $groupName);
+				readingsBulkUpdate($hash, "msgGroupId", $groupId);
+				readingsBulkUpdate($hash, "msgAttachment", $attachment);
+				readingsEndUpdate($hash, 1);
 
+				$logText =~ s/\x1A/\x20/g;
+
+				Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - The message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupName ($groupId)' and attachment: '$attachment'");
+			}else{
+				Log3($hash->{NAME},3,"$hash->{TYPE} $hash->{NAME} - UNAUTHORIZED message: '$logText' with timestamp: '$timestamp' was received from sender: '$sender' in group: '$groupName ($groupId)' and attachment: '$attachment'");
+			}
 		}elsif($curr_message =~ /^Sent:(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)\x1F(.*)$/){
 
 			my $result = $1;
@@ -319,6 +328,16 @@ sub SiSi_Attr(@) {
 
 				}
 			}elsif($attr_name eq "defaultPeer") {
+				if($attr_value =~ /^\+{1}[0-9]+$/ || $attr_value =~ /^.*==$/) {
+
+					return undef;
+
+				}else{
+
+					return "Invalid argument $attr_value to $attr_name. Must be a valid recipient or groupId"
+
+				}
+			}elsif($attr_name eq "allowedPeer") {
 				if($attr_value =~ /^\+{1}[0-9]+$/ || $attr_value =~ /^.*==$/) {
 
 					return undef;
@@ -779,6 +798,11 @@ sub SiSi_MessageDaemonWatchdog($){
 						<li><i>defaultPeer</i><br>
 								If neither a recipient nor a group was given with the send commands,
 								the recipient or groupId given with this attribute will be used.
+						</li>
+						<li><i>allowedPeer</i><br>
+							  Comma separated list of recipient(s) or groupId(s), allowed to
+								update the msg.* readings and trigger new events when receiving a new message.
+								If the attribute is not defined, everyone is able to do that.
 						</li>
             <li><i>enable [yes|no]</i><br>
                 Set this attribute to yes, to initiate a connection to signal-clis DBus service<br>
