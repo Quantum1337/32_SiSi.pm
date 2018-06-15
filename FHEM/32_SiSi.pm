@@ -748,7 +748,7 @@ sub SiSi_MessageDaemonWatchdog($){
 <a name="SiSi"></a>
 <h3>SiSi</h3>
 <ul>
-    <i>SiSi</i> [Si]gnal [Si]cherer Messenger is an encrypted communications application
+    <i>[Si]gnal [Si]cherer Messenger</i> is an encrypted communications application
 		for <a href="https://github.com/signalapp/Signal-Android">Android</a> and
 		<a href="https://github.com/signalapp/Signal-iOS">iOS</a>. Not only the
 		mobile applications, also the <a href="https://github.com/signalapp/Signal-Server">Server</a>
@@ -762,6 +762,7 @@ sub SiSi_MessageDaemonWatchdog($){
     <br><br>
     <a name="SiSidefine"></a>
     <b>Define</b>
+		<br><br>
     <ul>
         <code>define &lt;name&gt; SiSi</code>
     </ul>
@@ -825,7 +826,7 @@ sub SiSi_MessageDaemonWatchdog($){
 							Sender of the last received message.
             </li>
 						<li><i>msgGroupId</i><br>
-							128-Bit group identifier of the last received message. If a message was not sent
+							128-Bit base64 encoded group identifier of the last received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>msgGroupName</i><br>
@@ -849,7 +850,7 @@ sub SiSi_MessageDaemonWatchdog($){
 							Sender of the previous received message.
             </li>
 						<li><i>prevMsgGroupId</i><br>
-							128-Bit group identifier of the previous received message. If a message was not sent
+							128-Bit base64 encoded group identifier of the previous received message. If a message was not sent
 							within a group, this reading will have the value NONE.
             </li>
 						<li><i>prevMsgGroupName</i><br>
