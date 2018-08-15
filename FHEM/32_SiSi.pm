@@ -139,8 +139,16 @@ sub SiSi_Set($$$) {
 
 		}
 		return "Not enough arguments. Specify a Recipient, a GroupId or set the defaultPeer attribute" if(((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)) && (!defined AttrVal($hash->{NAME},"defaultPeer",undef)));
-		push(@recipients,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^\+{1}[0-9]+$/));
-		push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^[a-z,A-Z,0-9,\+,\/]{22}==$/));
+
+		my @peers = split(/,/,AttrVal($hash->{NAME},"defaultPeer",undef));
+
+		while(my $curr_arg = shift @peers){
+			if($curr_arg =~ /^\+{1}[0-9]+$/){
+				push(@recipients,$curr_arg);
+			}elsif($curr_arg =~ /^[a-z,A-Z,0-9,\+,\/]{22}==$/){
+				push(@groupIdsEnc,$curr_arg);
+		  }
+		}
 
 		return "A Recipient is not valid. Note that you have to specify the country code e.g. +49... for germany" if(join(",",@recipients) !~ /^(\+{1}[0-9]+)*(,\+{1}[0-9]+)*$/);
 		return "Specify either a message text or an attachment" if((int(@attachments) == 0) && (int(@args) == 0));
@@ -799,12 +807,12 @@ sub SiSi_MessageDaemonWatchdog($){
         <ul>
 						<li><i>defaultPeer</i><br>
 								If neither a recipient nor a group was given with the send commands,
-								the recipient or groupId given with this attribute will be used.
+								the recipient(s) and/or groupId(s) given with this attribute will be used.
 						</li>
 						<li><i>allowedPeer</i><br>
-							  Comma separated list of recipient(s) or groupId(s), allowed to
+							  Comma separated list of recipient(s) and/or groupId(s), allowed to
 								update the msg.* readings and trigger new events when receiving a new message.
-								If the attribute is not defined, everyone is able to do that.
+								<b>If the attribute is not defined, everyone is able to trigger new events!!</b>
 						</li>
             <li><i>enable [yes|no]</i><br>
                 Set this attribute to yes, to initiate a connection to signal-clis DBus service<br>
