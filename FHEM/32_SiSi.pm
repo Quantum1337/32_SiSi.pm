@@ -140,7 +140,7 @@ sub SiSi_Set($$$) {
 		}
 		return "Not enough arguments. Specify a Recipient, a GroupId or set the defaultPeer attribute" if(((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)) && (!defined AttrVal($hash->{NAME},"defaultPeer",undef)));
 		push(@recipients,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^\+{1}[0-9]+$/));
-		push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^.*==$/));
+		push(@groupIdsEnc,AttrVal($hash->{NAME},"defaultPeer",undef)) if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0) && (AttrVal($hash->{NAME},"defaultPeer",undef) =~ /^[a-z,A-Z,0-9,\+,\/]{22}==$/));
 
 		return "A Recipient is not valid. Note that you have to specify the country code e.g. +49... for germany" if(join(",",@recipients) !~ /^(\+{1}[0-9]+)*(,\+{1}[0-9]+)*$/);
 		return "Specify either a message text or an attachment" if((int(@attachments) == 0) && (int(@args) == 0));
@@ -329,23 +329,22 @@ sub SiSi_Attr(@) {
 
 				}
 			}elsif($attr_name eq "defaultPeer") {
-				if($attr_value =~ /^\+{1}[0-9]+$/ || $attr_value =~ /^.*==$/) {
-
+  		  if($attr_value =~ /^(\+{1}[0-9]+|[a-z,A-Z,0-9,\+,\/]{22}==){1}(,(\+{1}[0-9]+|[a-z,A-Z,0-9,\+,\/]{22}==))*$/){
 					return undef;
 
 				}else{
 
-					return "Invalid argument $attr_value to $attr_name. Must be a valid recipient or groupId"
+					return "Invalid argument $attr_value to $attr_name. Must be one or more valid recipient(s) or groupId(s)"
 
 				}
 			}elsif($attr_name eq "allowedPeer") {
-				if($attr_value =~ /^\+{1}[0-9]+$/ || $attr_value =~ /^.*==$/) {
+				if($attr_value =~ /^(\+{1}[0-9]+|[a-z,A-Z,0-9,\+,\/]{22}==){1}(,(\+{1}[0-9]+|[a-z,A-Z,0-9,\+,\/]{22}==))*$/){
 
 					return undef;
 
 				}else{
 
-					return "Invalid argument $attr_value to $attr_name. Must be a valid recipient or groupId"
+					return "Invalid argument $attr_value to $attr_name. Must be one or more valid recipient(s) or groupId(s)"
 
 				}
 			}
@@ -746,6 +745,7 @@ sub SiSi_MessageDaemonWatchdog($){
 
 =pod
 =begin html
+
 <a name="SiSi"></a>
 <h3>SiSi</h3>
 <ul>
