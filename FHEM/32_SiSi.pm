@@ -56,7 +56,7 @@ sub SiSi_Define($$$) {
 		return "Please install Net::DBus in version 1.1.0 or higher. Your version is: $Net::DBus::VERSION"
 	}
 
-	$hash->{VERSION} = "1.1";
+	$hash->{VERSION} = "1.1.1";
 	$hash->{OBJECT} = AttrVal($hash->{NAME},"object","/org/asamk/Signal");
 	$hash->{SERVICE} = AttrVal($hash->{NAME},"service","org.asamk.Signal");
 
