@@ -142,13 +142,15 @@ sub SiSi_Set($$$) {
 
 		my @peers = split(/,/,AttrVal($hash->{NAME},"defaultPeer",undef));
 
-		while(my $curr_arg = shift @peers){
-			if($curr_arg =~ /^\+{1}[0-9]+$/){
-				push(@recipients,$curr_arg);
-			}elsif($curr_arg =~ /^[a-z,A-Z,0-9,\+,\/]{22}==$/){
-				push(@groupIdsEnc,$curr_arg);
-		  }
-		}
+		if((int(@recipients) == 0) && (int(@groupIdsEnc) == 0)){
+			while(my $curr_arg = shift @peers){
+				if($curr_arg =~ /^\+{1}[0-9]+$/){
+					push(@recipients,$curr_arg);
+				}elsif($curr_arg =~ /^[a-z,A-Z,0-9,\+,\/]{22}==$/){
+					push(@groupIdsEnc,$curr_arg);
+		  	}
+			}
+	  }
 
 		return "A Recipient is not valid. Note that you have to specify the country code e.g. +49... for germany" if(join(",",@recipients) !~ /^(\+{1}[0-9]+)*(,\+{1}[0-9]+)*$/);
 		return "Specify either a message text or an attachment" if((int(@attachments) == 0) && (int(@args) == 0));
